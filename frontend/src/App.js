@@ -713,15 +713,41 @@ const ProfilePage = () => {
     }
   }, [user]);
 
-  const fetchUserRatings = async () => {
+  const fetchUserData = async () => {
     if (!user) return;
     try {
-      const response = await axios.get(`${API}/users/${user.id}/ratings`);
-      setUserRatings(response.data);
+      const [ratingsRes, favoritesRes] = await Promise.all([
+        axios.get(`${API}/users/${user.id}/ratings`),
+        axios.get(`${API}/users/${user.id}/film-lists/favorites?viewer_id=${user.id}`)
+      ]);
+      
+      setUserRatings(ratingsRes.data);
+      setFavoriteFilms(favoritesRes.data.slice(0, 5));
+      
+      // Get top 5 highest rated films by this user
+      const topRated = ratingsRes.data
+        .sort((a, b) => b.rating - a.rating || new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 5);
+      setTopRatedFilms(topRated);
+      
     } catch (error) {
-      console.error('Error fetching user ratings:', error);
+      console.error('Error fetching user data:', error);
     }
   };
+
+  const fetchListFilms = async (listType) => {
+    if (!user) return;
+    try {
+      const response = await axios.get(`${API}/users/${user.id}/film-lists/${listType}?viewer_id=${user.id}`);
+      setListFilms(response.data);
+    } catch (error) {
+      console.error('Error fetching list films:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchListFilms(selectedList);
+  }, [selectedList, user]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
