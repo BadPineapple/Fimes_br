@@ -1891,6 +1891,7 @@ const ProfilePage = () => {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* User Ratings */}
         <Card>
