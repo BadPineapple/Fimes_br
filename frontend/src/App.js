@@ -1748,6 +1748,7 @@ const FilmDetailPage = () => {
   const [ratings, setRatings] = useState([]);
   const [averageRating, setAverageRating] = useState({ average: 0, count: 0 });
   const [userRating, setUserRating] = useState({ rating: 0, comment: '' });
+  const [userLists, setUserLists] = useState({ favorites: false, watched: false, to_watch: false });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
