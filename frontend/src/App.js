@@ -96,6 +96,12 @@ const Navigation = () => {
                   Perfil
                 </Link>
               )}
+              {user && user.role === 'moderator' && (
+                <Link to="/moderator" className="text-white hover:text-yellow-200 flex items-center gap-2 bg-blue-600 px-3 py-1 rounded">
+                  <MessageSquare size={18} />
+                  Dashboard
+                </Link>
+              )}
             </div>
           </div>
           <div className="flex items-center space-x-4">
