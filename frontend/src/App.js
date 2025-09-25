@@ -205,8 +205,49 @@ const Navigation = () => {
 const LoginDialog = () => {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [captcha, setCaptcha] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState(0);
+  const [captchaQuestion, setCaptchaQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = React.useContext(AuthContext);
+
+  // Generate simple math captcha
+  const generateCaptcha = () => {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    const operations = ['+', '-', '×'];
+    const operation = operations[Math.floor(Math.random() * operations.length)];
+    
+    let answer;
+    let question;
+    
+    switch(operation) {
+      case '+':
+        answer = num1 + num2;
+        question = `${num1} + ${num2}`;
+        break;
+      case '-':
+        answer = Math.max(num1, num2) - Math.min(num1, num2);
+        question = `${Math.max(num1, num2)} - ${Math.min(num1, num2)}`;
+        break;
+      case '×':
+        answer = num1 * num2;
+        question = `${num1} × ${num2}`;
+        break;
+      default:
+        answer = num1 + num2;
+        question = `${num1} + ${num2}`;
+    }
+    
+    setCaptchaQuestion(question);
+    setCaptchaAnswer(answer);
+  };
+
+  useEffect(() => {
+    if (open) {
+      generateCaptcha();
+    }
+  }, [open]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
