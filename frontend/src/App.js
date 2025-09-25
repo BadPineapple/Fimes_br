@@ -1776,6 +1776,19 @@ const FilmDetailPage = () => {
             comment: existingRating.comment || '' 
           });
         }
+        
+        // Check user's lists
+        const [favoritesRes, watchedRes, toWatchRes] = await Promise.all([
+          axios.get(`${API}/users/${user.id}/film-lists/favorites?viewer_id=${user.id}`),
+          axios.get(`${API}/users/${user.id}/film-lists/watched?viewer_id=${user.id}`),
+          axios.get(`${API}/users/${user.id}/film-lists/to_watch?viewer_id=${user.id}`)
+        ]);
+        
+        setUserLists({
+          favorites: favoritesRes.data.some(f => f.id === id),
+          watched: watchedRes.data.some(f => f.id === id),
+          to_watch: toWatchRes.data.some(f => f.id === id)
+        });
       }
     } catch (error) {
       console.error('Error fetching film data:', error);
