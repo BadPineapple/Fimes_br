@@ -2369,6 +2369,7 @@ function App() {
             <Route path="/films" element={<FilmsPage />} />
             <Route path="/films/:id" element={<FilmDetailPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/:id" element={<ProfilePage />} />
             <Route path="/encontrar" element={<EncontrarPage />} />
             <Route path="/apoie" element={<ApoiePage />} />
             <Route path="/moderator" element={<ModeratorDashboard />} />
