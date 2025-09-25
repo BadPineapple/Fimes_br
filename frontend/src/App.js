@@ -993,16 +993,27 @@ const FilmDetailPage = () => {
                           </Avatar>
                           <span className="font-medium">{rating.user_name}</span>
                         </div>
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star 
-                              key={i} 
-                              size={14} 
-                              className={`${
-                                i < rating.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star 
+                                key={i} 
+                                size={14} 
+                                className={`${
+                                  i < rating.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          {user && user.id !== rating.user_id && (
+                            <button
+                              onClick={() => handleReportComment(rating.id)}
+                              className="text-gray-400 hover:text-red-500 text-xs"
+                              title="Denunciar comentário"
+                            >
+                              ⚠️
+                            </button>
+                          )}
                         </div>
                       </div>
                       {rating.comment && (
