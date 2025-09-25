@@ -1669,9 +1669,9 @@ const ProfilePage = () => {
           <CardHeader>
             <div className="flex items-center space-x-4">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={user.avatar_url} />
+                <AvatarImage src={currentUser.avatar_url} />
                 <AvatarFallback className="text-2xl bg-green-100 text-green-800">
-                  {user.name[0]}
+                  {currentUser.name[0]}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
