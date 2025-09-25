@@ -562,6 +562,383 @@ const EncontrarPage = () => {
   );
 };
 
+// Moderator Dashboard Page
+const ModeratorDashboard = () => {
+  const { user } = React.useContext(AuthContext);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [reports, setReports] = useState([]);
+  const [newProfiles, setNewProfiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+  const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    if (user && user.role === 'moderator') {
+      fetchDashboardData();
+      fetchReports();
+      fetchNewProfiles();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await axios.get(`${API}/moderation/dashboard?moderator_id=${user.id}`);
+      setDashboardData(response.data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    }
+  };
+
+  const fetchReports = async () => {
+    try {
+      const response = await axios.get(`${API}/moderation/reports?moderator_id=${user.id}`);
+      setReports(response.data);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    }
+  };
+
+  const fetchNewProfiles = async () => {
+    try {
+      const response = await axios.get(`${API}/moderation/new-profiles?moderator_id=${user.id}&days=7`);
+      setNewProfiles(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching new profiles:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleAction = (actionType, data = {}) => {
+    setPendingAction({ type: actionType, data });
+    setShowConfirmDialog(true);
+    setPassword('');
+  };
+
+  const confirmAction = async () => {
+    if (password !== '1357') {
+      alert('Senha incorreta! Use: 1357');
+      return;
+    }
+
+    try {
+      if (pendingAction.type === 'resolve_report') {
+        await axios.post(`${API}/moderation/reports/${pendingAction.data.reportId}/resolve?moderator_id=${user.id}`, {
+          action: pendingAction.data.action,
+          password: password
+        });
+        fetchReports();
+        alert('Denúncia resolvida com sucesso!');
+      } else if (pendingAction.type === 'mark_supporter') {
+        await axios.post(`${API}/moderation/mark-supporter?moderator_id=${user.id}`, {
+          user_id: pendingAction.data.userId,
+          action_type: 'mark_supporter',
+          password: password
+        });
+        fetchNewProfiles();
+        alert('Usuário marcado como apoiador!');
+      }
+    } catch (error) {
+      console.error('Error executing action:', error);
+      alert('Erro ao executar ação: ' + (error.response?.data?.detail || 'Erro desconhecido'));
+    }
+
+    setShowConfirmDialog(false);
+    setPendingAction(null);
+  };
+
+  if (!user || user.role !== 'moderator') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <CardContent>
+            <h1 className="text-2xl font-bold text-red-800 mb-4">Acesso Negado</h1>
+            <p className="text-red-600">Apenas moderadores podem acessar este dashboard.</p>
+            <p className="text-sm text-gray-600 mt-2">
+              Use o email: Moderador@Moderador.com para fazer login como moderador.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-2xl text-blue-800">Carregando dashboard...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-blue-800 mb-2">Dashboard do Moderador</h1>
+          <p className="text-blue-600">Bem-vindo, {user.name}</p>
+        </div>
+
+        {/* Métricas Gerais */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6 text-center">
+              <MessageSquare size={48} className="mx-auto mb-4 text-red-500" />
+              <h3 className="text-2xl font-bold text-red-600">{dashboardData?.pending_reports || 0}</h3>
+              <p className="text-gray-600">Denúncias Pendentes</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6 text-center">
+              <User size={48} className="mx-auto mb-4 text-green-500" />
+              <h3 className="text-2xl font-bold text-green-600">{dashboardData?.new_profiles || 0}</h3>
+              <p className="text-gray-600">Novos Perfis (30 dias)</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6 text-center">
+              <Film size={48} className="mx-auto mb-4 text-blue-500" />
+              <h3 className="text-2xl font-bold text-blue-600">6</h3>
+              <p className="text-gray-600">Filmes Cadastrados</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="reports" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="reports">Denúncias ({reports.length})</TabsTrigger>
+            <TabsTrigger value="profiles">Novos Perfis</TabsTrigger>
+            <TabsTrigger value="metrics">Métricas de Filmes</TabsTrigger>
+          </TabsList>
+
+          {/* Denúncias */}
+          <TabsContent value="reports">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-blue-800">Gerenciar Denúncias</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {reports.length > 0 ? (
+                  <div className="space-y-4">
+                    {reports.map((report) => (
+                      <div key={report.id} className="border border-gray-200 p-4 rounded-lg">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <Badge variant="outline" className="mb-2">{report.reason}</Badge>
+                            <p className="text-sm text-gray-600">
+                              Denunciado por: {report.reporter_name}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(report.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleAction('resolve_report', { reportId: report.id, action: 'dismiss' })}
+                            >
+                              Dispensar
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleAction('resolve_report', { reportId: report.id, action: 'delete_comment' })}
+                            >
+                              Excluir Comentário
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="bg-red-600"
+                              onClick={() => handleAction('resolve_report', { reportId: report.id, action: 'ban_user' })}
+                            >
+                              Banir Usuário
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded">
+                          <p className="text-sm font-medium">Comentário denunciado:</p>
+                          <p className="text-sm text-gray-700 mt-1">"{report.comment_text}"</p>
+                        </div>
+                        {report.description && (
+                          <div className="mt-2">
+                            <p className="text-sm font-medium">Descrição da denúncia:</p>
+                            <p className="text-sm text-gray-600">{report.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <MessageSquare size={48} className="mx-auto mb-4" />
+                    <p>Nenhuma denúncia pendente</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Novos Perfis */}
+          <TabsContent value="profiles">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-blue-800">Novos Perfis (Últimos 7 dias)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {newProfiles.length > 0 ? (
+                  <div className="space-y-4">
+                    {newProfiles.map((profile) => (
+                      <div key={profile.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <Avatar>
+                            <AvatarImage src={profile.avatar_url} />
+                            <AvatarFallback>{profile.name[0]}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-medium">{profile.name}</h3>
+                            <p className="text-sm text-gray-600">{profile.email}</p>
+                            <p className="text-xs text-gray-500">
+                              Criado em: {new Date(profile.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                            {profile.is_supporter && (
+                              <Badge className="mt-1 bg-yellow-100 text-yellow-800">
+                                <Star size={12} className="mr-1" />
+                                Apoiador
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="space-x-2">
+                          {!profile.is_supporter && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="text-yellow-600 border-yellow-300"
+                              onClick={() => handleAction('mark_supporter', { userId: profile.id })}
+                            >
+                              <Star size={16} className="mr-1" />
+                              Marcar como Apoiador
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <User size={48} className="mx-auto mb-4" />
+                    <p>Nenhum perfil novo nos últimos 7 dias</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Métricas de Filmes */}
+          <TabsContent value="metrics">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-blue-800 text-sm">Melhores Avaliações</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dashboardData?.top_rated_films?.length > 0 ? (
+                    <div className="space-y-2">
+                      {dashboardData.top_rated_films.map((item, index) => (
+                        <div key={index} className="text-sm">
+                          <p className="font-medium">{item.film.title}</p>
+                          <p className="text-gray-600">⭐ {item.metrics.average_rating}/5 ({item.metrics.ratings_count} votos)</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">Sem dados ainda</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-blue-800 text-sm">Mais Favoritados</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dashboardData?.top_favorite_films?.length > 0 ? (
+                    <div className="space-y-2">
+                      {dashboardData.top_favorite_films.map((item, index) => (
+                        <div key={index} className="text-sm">
+                          <p className="font-medium">{item.film.title}</p>
+                          <p className="text-gray-600">❤️ {item.metrics.favorites_count} favoritos</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">Sem dados ainda</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-blue-800 text-sm">Mais Assistidos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dashboardData?.top_watched_films?.length > 0 ? (
+                    <div className="space-y-2">
+                      {dashboardData.top_watched_films.map((item, index) => (
+                        <div key={index} className="text-sm">
+                          <p className="font-medium">{item.film.title}</p>
+                          <p className="text-gray-600">👁️ {item.metrics.watched_count} assistidos</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">Sem dados ainda</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Dialog de Confirmação */}
+        {showConfirmDialog && (
+          <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirmar Ação</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p>Para confirmar esta ação, digite a senha de moderador:</p>
+                <Input
+                  type="password"
+                  placeholder="Digite: 1357"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  maxLength={4}
+                />
+                <div className="flex space-x-2 justify-end">
+                  <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={confirmAction}>
+                    Confirmar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Apoie Page
 const ApoiePage = () => {
   return (
