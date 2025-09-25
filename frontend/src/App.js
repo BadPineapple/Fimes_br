@@ -424,8 +424,8 @@ const FilmsPage = () => {
   );
 };
 
-// AI Recommendations Page
-const AIRecommendationsPage = () => {
+// Encontrar Page (AI Recommendations)
+const EncontrarPage = () => {
   const [description, setDescription] = useState('');
   const [recommendations, setRecommendations] = useState(null);
   const [loading, setLoading] = useState(false);
