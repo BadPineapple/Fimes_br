@@ -715,11 +715,22 @@ const ModeratorDashboard = () => {
           </Card>
         </div>
 
+        <div className="mb-6">
+          <Button 
+            className="bg-green-600 hover:bg-green-700"
+            onClick={() => handleAction('add_film')}
+          >
+            <Film className="mr-2" size={18} />
+            Adicionar Novo Filme
+          </Button>
+        </div>
+
         <Tabs defaultValue="reports" className="space-y-6">
           <TabsList>
             <TabsTrigger value="reports">Denúncias ({reports.length})</TabsTrigger>
             <TabsTrigger value="profiles">Novos Perfis</TabsTrigger>
             <TabsTrigger value="metrics">Métricas de Filmes</TabsTrigger>
+            <TabsTrigger value="add-film">Adicionar Filme</TabsTrigger>
           </TabsList>
 
           {/* Denúncias */}
