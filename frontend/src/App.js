@@ -882,6 +882,155 @@ const ProfilePage = () => {
           </CardHeader>
         </Card>
 
+        {/* Favorite Films */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-green-800">Filmes Favoritos</CardTitle>
+            <CardDescription>
+              Seus filmes marcados como favoritos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {favoriteFilms.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {favoriteFilms.map((film) => (
+                  <Link key={film.id} to={`/films/${film.id}`}>
+                    <div className="aspect-[2/3] bg-gradient-to-br from-green-200 to-yellow-200 rounded-lg flex items-center justify-center hover:opacity-80 transition-opacity">
+                      {film.banner_url ? (
+                        <img 
+                          src={film.banner_url} 
+                          alt={film.title}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <Film size={32} className="text-green-600" />
+                      )}
+                    </div>
+                    <p className="text-sm font-medium mt-2 text-center line-clamp-2">
+                      {film.title}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                Nenhum filme marcado como favorito ainda
+              </p>
+            )}
+            {favoriteFilms.length > 0 && (
+              <div className="mt-4 text-center">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedList('favorites')}
+                  className="text-green-600"
+                >
+                  Ver todos os favoritos
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top Rated Films */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-green-800">Minhas Melhores Avaliações</CardTitle>
+            <CardDescription>
+              Filmes que você deu as melhores notas (mais recentes primeiro)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {topRatedFilms.length > 0 ? (
+              <div className="space-y-3">
+                {topRatedFilms.map((rating) => (
+                  <div key={rating.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                    <Link to={`/films/${rating.film_id}`} className="flex-1 flex items-center space-x-3">
+                      <div className="w-12 h-16 bg-gradient-to-br from-green-200 to-yellow-200 rounded flex items-center justify-center">
+                        <Film size={20} className="text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium">{rating.film_title}</h3>
+                        <p className="text-sm text-gray-600">{rating.film_year}</p>
+                      </div>
+                    </Link>
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <Star 
+                            key={i} 
+                            size={16} 
+                            className={`${
+                              i < rating.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm font-medium">{rating.rating}/5</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                Você ainda não avaliou nenhum filme
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Film Lists */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-green-800">Minhas Listas</CardTitle>
+            <CardDescription>
+              Organize seus filmes por categoria
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <select
+                value={selectedList}
+                onChange={(e) => setSelectedList(e.target.value)}
+                className="px-4 py-2 border border-green-300 rounded-md bg-white text-green-800 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="favorites">Favoritos</option>
+                <option value="watched">Assistidos</option>
+                <option value="to_watch">Quero Assistir</option>
+              </select>
+            </div>
+            
+            <div className="min-h-[200px]">
+              {listFilms.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {listFilms.map((film) => (
+                    <Link key={film.id} to={`/films/${film.id}`}>
+                      <div className="aspect-[2/3] bg-gradient-to-br from-green-200 to-yellow-200 rounded-lg flex items-center justify-center hover:opacity-80 transition-opacity">
+                        {film.banner_url ? (
+                          <img 
+                            src={film.banner_url} 
+                            alt={film.title}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <Film size={32} className="text-green-600" />
+                        )}
+                      </div>
+                      <p className="text-sm font-medium mt-2 text-center line-clamp-2">
+                        {film.title}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Film size={48} className="mx-auto mb-4" />
+                  <p>Nenhum filme na lista "{getListTypeLabel(selectedList)}"</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* User Ratings */}
         <Card>
           <CardHeader>
