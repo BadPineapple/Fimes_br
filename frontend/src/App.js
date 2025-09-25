@@ -1704,16 +1704,16 @@ const ProfilePage = () => {
                 ) : (
                   <>
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-2xl text-green-800">{user.name}</CardTitle>
-                      {user.is_supporter && (
+                      <CardTitle className="text-2xl text-green-800">{currentUser.name}</CardTitle>
+                      {currentUser.is_supporter && (
                         <Star className="text-yellow-500 fill-yellow-500" size={24} title="Apoiador" />
                       )}
-                      {user.is_private && (
+                      {currentUser.is_private && (
                         <span className="text-xs bg-gray-200 px-2 py-1 rounded">Privado</span>
                       )}
                     </div>
                     <CardDescription className="text-base mt-2">
-                      {user.description || 'Amante do cinema brasileiro'}
+                      {currentUser.description || 'Amante do cinema brasileiro'}
                     </CardDescription>
                   </>
                 )}
