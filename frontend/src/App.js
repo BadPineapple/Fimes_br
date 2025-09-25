@@ -1807,6 +1807,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/encontrar" element={<EncontrarPage />} />
             <Route path="/apoie" element={<ApoiePage />} />
+            <Route path="/moderator" element={<ModeratorDashboard />} />
           </Routes>
         </div>
       </Router>
