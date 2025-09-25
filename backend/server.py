@@ -324,9 +324,16 @@ async def get_test_user():
 
 # User endpoints
 @api_router.put("/users/{user_id}")
-async def update_user(user_id: str, updates: dict):
+async def update_user(user_id: str, updates: UserUpdate):
     """Update user profile"""
-    await db.users.update_one({"id": user_id}, {"$set": updates})
+    update_dict = {k: v for k, v in updates.dict().items() if v is not None}
+    
+    # Only moderators can set is_supporter
+    if "is_supporter" in update_dict:
+        # This should be handled by a separate moderator endpoint
+        del update_dict["is_supporter"]
+    
+    await db.users.update_one({"id": user_id}, {"$set": update_dict})
     updated_user = await db.users.find_one({"id": user_id})
     return User(**updated_user)
 
