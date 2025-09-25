@@ -460,10 +460,10 @@ const EncontrarPage = () => {
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-green-800 mb-4">
-            IA Recomenda Filmes Brasileiros
+            Encontrar Filmes Brasileiros
           </h1>
           <p className="text-green-700 text-lg">
-            Descreva o que você está com vontade de assistir e nossa IA irá recomendar filmes brasileiros perfeitos para você!
+            Descreva o que você está com vontade de assistir e nossa IA irá recomendar filmes brasileiros perfeitos para você baseado nos filmes, comentários e avaliações da nossa comunidade!
           </p>
         </div>
 
