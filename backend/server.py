@@ -307,8 +307,22 @@ async def delete_film(film_id: str):
 
 # Rating endpoints
 @api_router.post("/films/{film_id}/ratings")
-async def create_rating(film_id: str, rating_data: UserRatingCreate, user_id: str):
+async def create_rating(film_id: str, rating_data: UserRatingCreate, user_id: str, request: Request):
     """Create or update user rating for a film"""
+    # Rate limiting
+    client_ip = request.client.host
+    if not check_rate_limit(client_ip, max_requests=5, window_seconds=300):  # 5 avaliações por 5 min
+        raise HTTPException(status_code=429, detail="Muitas tentativas. Tente novamente em alguns minutos.")
+    
+    # Verificar se usuário está banido
+    if await check_user_banned(user_id):
+        raise HTTPException(status_code=403, detail="Usuário banido do sistema.")
+    
+    # Verificar se o filme existe
+    film = await db.films.find_one({"id": film_id})
+    if not film:
+        raise HTTPException(status_code=404, detail="Filme não encontrado")
+    
     rating = UserRating(user_id=user_id, **rating_data.dict())
     
     # Remove existing rating if any
