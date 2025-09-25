@@ -292,6 +292,36 @@ const LoginDialog = () => {
               required
               data-testid="email-input"
             />
+            
+            {/* Captcha Verification */}
+            <div className="bg-gray-50 p-4 rounded-md">
+              <label className="block text-sm font-medium mb-2">
+                🤖 Verificação: Não sou um robô
+              </label>
+              <div className="flex items-center space-x-3">
+                <span className="text-lg font-mono bg-white px-3 py-2 border rounded">
+                  {captchaQuestion} = ?
+                </span>
+                <Input
+                  type="number"
+                  placeholder="Resultado"
+                  value={captcha}
+                  onChange={(e) => setCaptcha(e.target.value)}
+                  className="w-20"
+                  required
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={generateCaptcha}
+                  title="Gerar nova pergunta"
+                >
+                  🔄
+                </Button>
+              </div>
+            </div>
+            
             <Button type="submit" disabled={loading} className="w-full" data-testid="login-submit">
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
