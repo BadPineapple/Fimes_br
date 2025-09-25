@@ -89,6 +89,85 @@ class AIRecommendationResponse(BaseModel):
     recommendations: List[str]
     explanation: str
 
+class CommentReport(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    comment_id: str
+    reporter_user_id: str
+    reason: str
+    description: Optional[str] = None
+    status: str = "pending"  # pending, reviewed, dismissed
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CommentReportCreate(BaseModel):
+    comment_id: str
+    reason: str
+    description: Optional[str] = None
+    
+    @validator('reason')
+    def validate_reason(cls, v):
+        allowed_reasons = ['spam', 'inappropriate', 'harassment', 'off_topic', 'other']
+        if v not in allowed_reasons:
+            raise ValueError('Razão inválida')
+        return v
+
+class UserBan(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    moderator_id: str
+    reason: str
+    duration_hours: Optional[int] = None  # None = permanent ban
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    expires_at: Optional[datetime] = None
+
+class ContentFilter:
+    """Filtro de conteúdo para prevenir spam, links maliciosos e linguagem inadequada"""
+    
+    FORBIDDEN_WORDS = [
+        'merda', 'bosta', 'caralho', 'porra', 'cu', 'buceta', 'piroca',
+        'fdp', 'pqp', 'vsf', 'krl', 'puta', 'vagabundo', 'viado'
+    ]
+    
+    SPAM_PATTERNS = [
+        r'https?://[^\s]+',  # URLs
+        r'www\.[^\s]+',      # www links
+        r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',  # emails
+        r'(\d{4,5}[-.\s]?\d{4,5})',  # phone numbers
+        r'(whatsapp|telegram|instagram|facebook)',  # social media
+    ]
+    
+    @staticmethod
+    def is_content_safe(text: str) -> tuple[bool, str]:
+        """Verifica se o conteúdo é seguro. Retorna (is_safe, reason)"""
+        if not text or len(text.strip()) == 0:
+            return False, "Comentário vazio"
+            
+        text_lower = text.lower()
+        
+        # Verifica palavrões
+        for word in ContentFilter.FORBIDDEN_WORDS:
+            if word in text_lower:
+                return False, "Linguagem inadequada detectada"
+        
+        # Verifica padrões de spam
+        for pattern in ContentFilter.SPAM_PATTERNS:
+            if re.search(pattern, text, re.IGNORECASE):
+                return False, "Conteúdo suspeito de spam ou links não permitidos"
+        
+        # Verifica repetição excessiva
+        if len(set(text.lower().split())) < len(text.split()) * 0.5:
+            return False, "Conteúdo repetitivo detectado"
+            
+        # Verifica se é muito curto ou muito longo
+        if len(text.strip()) < 3:
+            return False, "Comentário muito curto"
+        if len(text.strip()) > 1000:
+            return False, "Comentário muito longo (máximo 1000 caracteres)"
+            
+        return True, ""
+
+# Rate limiting simples
+rate_limit_store = defaultdict(list)
+
 # Auth endpoints
 @api_router.post("/auth/login")
 async def login_user(email: str):
