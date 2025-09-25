@@ -76,7 +76,7 @@ class User(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
     avatar_url: Optional[str] = None
-    role: str = Field(default="user", regex="^(user|moderator)$")
+    role: str = Field(default="user", pattern="^(user|moderator)$")
     friends: List[str] = Field(default_factory=list)
     is_private: bool = Field(default=False, description="Perfil privado")
     is_supporter: bool = Field(default=False, description="Apoiador da plataforma")
