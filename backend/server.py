@@ -532,25 +532,6 @@ async def resolve_report(report_id: str, action: str, moderator_id: str):
     
     return {"message": f"Denúncia resolvida com ação: {action}"}
 
-# Filters endpoint
-@api_router.get("/films/by-genre/{genre}")
-async def get_films_by_genre(genre: str):
-    """Get films filtered by genre"""
-    films = await db.films.find({"tags": {"$regex": genre, "$options": "i"}}).to_list(1000)
-    return [Film(**film) for film in films]
-
-@api_router.get("/films/genres")
-async def get_available_genres():
-    """Get all available genres/tags"""
-    pipeline = [
-        {"$unwind": "$tags"},
-        {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}}
-    ]
-    
-    genres = await db.films.aggregate(pipeline).to_list(100)
-    return [{"genre": genre["_id"], "count": genre["count"]} for genre in genres]
-
 # AI Recommendation endpoint
 @api_router.post("/ai/recommend", response_model=AIRecommendationResponse)
 async def get_ai_recommendations(request: AIRecommendationRequest):
