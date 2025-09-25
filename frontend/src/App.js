@@ -568,6 +568,261 @@ const EncontrarPage = () => {
   );
 };
 
+// Add Film Form Component
+const AddFilmForm = ({ user, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    banner_url: '',
+    description: '',
+    year: '',
+    director: '',
+    imdb_rating: '',
+    letterboxd_rating: '',
+    tags: '',
+    watch_links: [{ platform: '', url: '' }]
+  });
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setShowConfirm(true);
+  };
+
+  const confirmSubmit = async () => {
+    if (password !== '1357') {
+      alert('Senha incorreta! Use: 1357');
+      return;
+    }
+
+    try {
+      const submitData = {
+        ...formData,
+        year: formData.year ? parseInt(formData.year) : null,
+        imdb_rating: formData.imdb_rating ? parseFloat(formData.imdb_rating) : null,
+        letterboxd_rating: formData.letterboxd_rating ? parseFloat(formData.letterboxd_rating) : null,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        watch_links: formData.watch_links.filter(link => link.platform && link.url)
+      };
+
+      await axios.post(`${API}/films`, submitData);
+      onSuccess();
+      
+      // Reset form
+      setFormData({
+        title: '',
+        banner_url: '',
+        description: '',
+        year: '',
+        director: '',
+        imdb_rating: '',
+        letterboxd_rating: '',
+        tags: '',
+        watch_links: [{ platform: '', url: '' }]
+      });
+      setShowConfirm(false);
+      setPassword('');
+      
+    } catch (error) {
+      console.error('Error adding film:', error);
+      alert('Erro ao adicionar filme: ' + (error.response?.data?.detail || 'Erro desconhecido'));
+    }
+  };
+
+  const addWatchLink = () => {
+    setFormData({
+      ...formData,
+      watch_links: [...formData.watch_links, { platform: '', url: '' }]
+    });
+  };
+
+  const updateWatchLink = (index, field, value) => {
+    const newLinks = [...formData.watch_links];
+    newLinks[index][field] = value;
+    setFormData({ ...formData, watch_links: newLinks });
+  };
+
+  const removeWatchLink = (index) => {
+    const newLinks = formData.watch_links.filter((_, i) => i !== index);
+    setFormData({ ...formData, watch_links: newLinks });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-blue-800">Adicionar Novo Filme Brasileiro</CardTitle>
+        <CardDescription>Preencha as informações do filme para adicionar ao catálogo</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Título *</label>
+                <Input
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Ex: Cidade de Deus"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Diretor</label>
+                <Input
+                  value={formData.director}
+                  onChange={(e) => setFormData({ ...formData, director: e.target.value })}
+                  placeholder="Ex: Fernando Meirelles"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Ano</label>
+                <Input
+                  type="number"
+                  value={formData.year}
+                  onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                  placeholder="Ex: 2002"
+                  min="1900"
+                  max="2030"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">URL da Capa</label>
+                <Input
+                  value={formData.banner_url}
+                  onChange={(e) => setFormData({ ...formData, banner_url: e.target.value })}
+                  placeholder="https://exemplo.com/capa.jpg"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">IMDB Rating (0-10)</label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={formData.imdb_rating}
+                  onChange={(e) => setFormData({ ...formData, imdb_rating: e.target.value })}
+                  placeholder="Ex: 8.6"
+                  min="0"
+                  max="10"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Letterboxd Rating (0-5)</label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={formData.letterboxd_rating}
+                  onChange={(e) => setFormData({ ...formData, letterboxd_rating: e.target.value })}
+                  placeholder="Ex: 4.3"
+                  min="0"
+                  max="5"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Tags/Gêneros</label>
+                <Input
+                  value={formData.tags}
+                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                  placeholder="Drama, Crime, Favela, Rio de Janeiro (separar por vírgula)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Sinopse *</label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Descreva o enredo do filme..."
+              rows={4}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Onde Assistir</label>
+            {formData.watch_links.map((link, index) => (
+              <div key={index} className="flex space-x-2 mb-2">
+                <Input
+                  placeholder="Plataforma (ex: Netflix)"
+                  value={link.platform}
+                  onChange={(e) => updateWatchLink(index, 'platform', e.target.value)}
+                  className="flex-1"
+                />
+                <Input
+                  placeholder="URL"
+                  value={link.url}
+                  onChange={(e) => updateWatchLink(index, 'url', e.target.value)}
+                  className="flex-1"
+                />
+                {formData.watch_links.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => removeWatchLink(index)}
+                    className="px-3"
+                  >
+                    ✕
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addWatchLink}
+              className="mt-2"
+            >
+              + Adicionar Link
+            </Button>
+          </div>
+
+          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+            Adicionar Filme ao Catálogo
+          </Button>
+        </form>
+
+        {/* Confirmação */}
+        {showConfirm && (
+          <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirmar Adição de Filme</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p>Digite a senha de moderador para adicionar o filme:</p>
+                <Input
+                  type="password"
+                  placeholder="Digite: 1357"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  maxLength={4}
+                />
+                <div className="flex space-x-2 justify-end">
+                  <Button variant="outline" onClick={() => setShowConfirm(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={confirmSubmit}>
+                    Adicionar Filme
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 // Moderator Dashboard Page
 const ModeratorDashboard = () => {
   const { user } = React.useContext(AuthContext);
