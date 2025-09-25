@@ -157,22 +157,29 @@ const Navigation = () => {
               <div className="px-4 pb-4 border-b border-white border-opacity-20">
                 {user ? (
                   <div className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage src={user.avatar_url} />
-                      <AvatarFallback className="bg-white text-green-800">{user.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-white font-medium">{user.name}</p>
-                      <button
-                        onClick={() => {
-                          logout();
-                          setSidebarOpen(false);
-                        }}
-                        className="text-yellow-200 text-sm hover:text-yellow-100"
-                      >
-                        Sair
-                      </button>
-                    </div>
+                    <Link 
+                      to="/profile"
+                      onClick={() => setSidebarOpen(false)}
+                      className="flex items-center space-x-3 hover:opacity-80"
+                    >
+                      <Avatar>
+                        <AvatarImage src={user.avatar_url} />
+                        <AvatarFallback className="bg-white text-green-800">{user.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-white font-medium">{user.name}</p>
+                        <p className="text-yellow-200 text-xs">Ver perfil</p>
+                      </div>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setSidebarOpen(false);
+                      }}
+                      className="text-yellow-200 text-sm hover:text-yellow-100 ml-auto"
+                    >
+                      Sair
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-2">
