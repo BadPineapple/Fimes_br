@@ -485,6 +485,474 @@ const AIRecommendationsPage = () => {
   );
 };
 
+// User Profile Page
+const ProfilePage = () => {
+  const { user } = React.useContext(AuthContext);
+  const [userRatings, setUserRatings] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ name: '', description: '' });
+
+  useEffect(() => {
+    if (user) {
+      setEditData({ name: user.name, description: user.description || '' });
+      fetchUserRatings();
+    }
+  }, [user]);
+
+  const fetchUserRatings = async () => {
+    if (!user) return;
+    try {
+      const response = await axios.get(`${API}/users/${user.id}/ratings`);
+      setUserRatings(response.data);
+    } catch (error) {
+      console.error('Error fetching user ratings:', error);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    try {
+      await axios.put(`${API}/users/${user.id}`, editData);
+      setIsEditing(false);
+      window.location.reload(); // Refresh to get updated user data
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
+  };
+
+  const handleTestLogin = async () => {
+    try {
+      const response = await axios.get(`${API}/auth/test-user`);
+      localStorage.setItem('userId', response.data.id);
+      window.location.reload();
+    } catch (error) {
+      console.error('Error with test login:', error);
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="text-center p-8">
+            <CardHeader>
+              <CardTitle className="text-green-800">Acesso ao Perfil</CardTitle>
+              <CardDescription>
+                Faça login para acessar seu perfil ou use o usuário de teste
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <LoginDialog />
+              <div className="text-sm text-gray-600">ou</div>
+              <Button 
+                variant="outline" 
+                onClick={handleTestLogin}
+                data-testid="test-login-button"
+              >
+                Entrar como Usuário de Teste
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 space-y-8">
+        {/* Profile Header */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={user.avatar_url} />
+                <AvatarFallback className="text-2xl bg-green-100 text-green-800">
+                  {user.name[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                {isEditing ? (
+                  <div className="space-y-3">
+                    <Input
+                      value={editData.name}
+                      onChange={(e) => setEditData({...editData, name: e.target.value})}
+                      placeholder="Nome"
+                    />
+                    <Textarea
+                      value={editData.description}
+                      onChange={(e) => setEditData({...editData, description: e.target.value})}
+                      placeholder="Descrição do perfil..."
+                      rows={2}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <CardTitle className="text-2xl text-green-800">{user.name}</CardTitle>
+                    <CardDescription className="text-base mt-2">
+                      {user.description || 'Amante do cinema brasileiro'}
+                    </CardDescription>
+                  </>
+                )}
+              </div>
+              <div className="space-x-2">
+                {isEditing ? (
+                  <>
+                    <Button onClick={handleSaveProfile} size="sm">Salvar</Button>
+                    <Button variant="outline" onClick={() => setIsEditing(false)} size="sm">
+                      Cancelar
+                    </Button>
+                  </>
+                ) : (
+                  <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+                    Editar Perfil
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* User Ratings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-green-800">Minhas Avaliações</CardTitle>
+            <CardDescription>
+              Filmes que você avaliou ({userRatings.length})
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {userRatings.length > 0 ? (
+              <div className="space-y-4">
+                {userRatings.map((rating) => (
+                  <div key={rating.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{rating.film_title}</h3>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              size={16} 
+                              className={`${
+                                i < rating.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          {rating.rating}/5 estrelas
+                        </span>
+                      </div>
+                      {rating.comment && (
+                        <p className="text-sm text-gray-700 mt-2">"{rating.comment}"</p>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {rating.film_year}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Film size={48} className="mx-auto mb-4" />
+                <p>Você ainda não avaliou nenhum filme</p>
+                <p className="text-sm">Que tal começar avaliando alguns clássicos do cinema brasileiro?</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+// Film Detail Page
+const FilmDetailPage = () => {
+  const { id } = useParams();
+  const { user } = React.useContext(AuthContext);
+  const [film, setFilm] = useState(null);
+  const [ratings, setRatings] = useState([]);
+  const [averageRating, setAverageRating] = useState({ average: 0, count: 0 });
+  const [userRating, setUserRating] = useState({ rating: 0, comment: '' });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchFilmData();
+  }, [id]);
+
+  const fetchFilmData = async () => {
+    try {
+      const [filmRes, ratingsRes, avgRes] = await Promise.all([
+        axios.get(`${API}/films/${id}`),
+        axios.get(`${API}/films/${id}/ratings`),
+        axios.get(`${API}/films/${id}/average-rating`)
+      ]);
+      
+      setFilm(filmRes.data);
+      setRatings(ratingsRes.data);
+      setAverageRating(avgRes.data);
+      
+      // Check if current user has rated this film
+      if (user) {
+        const existingRating = ratingsRes.data.find(r => r.user_id === user.id);
+        if (existingRating) {
+          setUserRating({ 
+            rating: existingRating.rating, 
+            comment: existingRating.comment || '' 
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching film data:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleRatingSubmit = async () => {
+    if (!user || userRating.rating === 0) return;
+    
+    try {
+      await axios.post(
+        `${API}/films/${id}/ratings?user_id=${user.id}`,
+        {
+          film_id: id,
+          rating: userRating.rating,
+          comment: userRating.comment
+        }
+      );
+      fetchFilmData(); // Refresh ratings
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-2xl text-green-800">Carregando filme...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!film) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <Card className="text-center p-8">
+            <CardContent>
+              <Film size={64} className="mx-auto mb-4 text-green-600" />
+              <h2 className="text-2xl font-bold text-green-800 mb-2">Filme não encontrado</h2>
+              <p className="text-green-700 mb-4">O filme que você procura não existe ou foi removido.</p>
+              <Link to="/films">
+                <Button>Voltar aos Filmes</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Film Header */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div className="lg:col-span-1">
+            <div className="aspect-[2/3] bg-gradient-to-br from-green-200 to-yellow-200 rounded-lg flex items-center justify-center">
+              {film.banner_url ? (
+                <img 
+                  src={film.banner_url} 
+                  alt={film.title}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <Film size={96} className="text-green-600" />
+              )}
+            </div>
+          </div>
+          
+          <div className="lg:col-span-2 space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold text-green-800 mb-2">{film.title}</h1>
+              <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
+                {film.year && <span className="font-semibold">{film.year}</span>}
+                {film.director && <span>Direção: {film.director}</span>}
+              </div>
+              
+              <div className="flex items-center space-x-6 mb-4">
+                {film.imdb_rating && (
+                  <div className="flex items-center space-x-2">
+                    <span className="font-semibold">IMDB:</span>
+                    <div className="flex items-center">
+                      <Star size={16} className="text-yellow-400 fill-yellow-400" />
+                      <span>{film.imdb_rating}/10</span>
+                    </div>
+                  </div>
+                )}
+                
+                {film.letterboxd_rating && (
+                  <div className="flex items-center space-x-2">
+                    <span className="font-semibold">Letterboxd:</span>
+                    <div className="flex items-center">
+                      <Star size={16} className="text-yellow-400 fill-yellow-400" />
+                      <span>{film.letterboxd_rating}/5</span>
+                    </div>
+                  </div>
+                )}
+                
+                {averageRating.count > 0 && (
+                  <div className="flex items-center space-x-2">
+                    <span className="font-semibold">Comunidade:</span>
+                    <div className="flex items-center">
+                      <Star size={16} className="text-green-500 fill-green-500" />
+                      <span>{averageRating.average}/5</span>
+                      <span className="text-sm text-gray-500">({averageRating.count} votos)</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                {film.tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="bg-green-100 text-green-800">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold text-green-800 mb-2">Sinopse</h3>
+              <p className="text-gray-700 leading-relaxed">{film.description}</p>
+            </div>
+            
+            {film.watch_links && film.watch_links.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-green-800 mb-3">Onde Assistir</h3>
+                <div className="flex flex-wrap gap-3">
+                  {film.watch_links.map((link, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className="border-green-600 text-green-700 hover:bg-green-50"
+                      asChild
+                    >
+                      <a href={link.url} target="_blank" rel="noopener noreferrer">
+                        {link.platform}
+                      </a>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* User Rating Section */}
+          {user && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-green-800">Sua Avaliação</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Nota (1-5 estrelas):</label>
+                  <div className="flex items-center space-x-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        size={24}
+                        className={`cursor-pointer ${
+                          star <= userRating.rating 
+                            ? 'text-yellow-400 fill-yellow-400' 
+                            : 'text-gray-300 hover:text-yellow-300'
+                        }`}
+                        onClick={() => setUserRating({...userRating, rating: star})}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Comentário (opcional):</label>
+                  <Textarea
+                    value={userRating.comment}
+                    onChange={(e) => setUserRating({...userRating, comment: e.target.value})}
+                    placeholder="O que você achou do filme?"
+                    rows={3}
+                  />
+                </div>
+                
+                <Button 
+                  onClick={handleRatingSubmit}
+                  disabled={userRating.rating === 0}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  Salvar Avaliação
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Community Ratings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-green-800">
+                Avaliações da Comunidade ({ratings.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {ratings.length > 0 ? (
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {ratings.map((rating) => (
+                    <div key={rating.id} className="border-b border-gray-200 pb-4 last:border-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={rating.user_avatar} />
+                            <AvatarFallback>{rating.user_name[0]}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{rating.user_name}</span>
+                        </div>
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              size={14} 
+                              className={`${
+                                i < rating.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      {rating.comment && (
+                        <p className="text-gray-700 text-sm">{rating.comment}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <MessageSquare size={48} className="mx-auto mb-4" />
+                  <p>Ainda não há avaliações para este filme</p>
+                  {user && <p className="text-sm">Seja o primeiro a avaliar!</p>}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main App Component
 function App() {
   return (
@@ -495,6 +963,8 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/films" element={<FilmsPage />} />
+            <Route path="/films/:id" element={<FilmDetailPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/ai-recommendations" element={<AIRecommendationsPage />} />
           </Routes>
         </div>
