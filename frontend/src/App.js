@@ -760,6 +760,15 @@ const ProfilePage = () => {
     }
   };
 
+  const getListTypeLabel = (type) => {
+    const labels = {
+      'favorites': 'Favoritos',
+      'watched': 'Assistidos',
+      'to_watch': 'Quero Assistir'
+    };
+    return labels[type] || type;
+  };
+
   const handleTestLogin = async () => {
     try {
       const response = await axios.get(`${API}/auth/test-user`);
