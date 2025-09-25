@@ -1848,6 +1848,36 @@ const FilmDetailPage = () => {
     }
   };
 
+  const toggleFilmList = async (listType) => {
+    if (!user) {
+      alert('Faça login para usar as listas');
+      return;
+    }
+
+    try {
+      if (userLists[listType]) {
+        // Remove from list
+        await axios.delete(`${API}/users/${user.id}/film-lists/${id}/${listType}`);
+      } else {
+        // Add to list
+        await axios.post(`${API}/users/${user.id}/film-lists`, {
+          film_id: id,
+          list_type: listType
+        });
+      }
+      
+      // Update local state
+      setUserLists({
+        ...userLists,
+        [listType]: !userLists[listType]
+      });
+      
+    } catch (error) {
+      console.error('Error updating film list:', error);
+      alert('Erro ao atualizar lista. Tente novamente.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50">
