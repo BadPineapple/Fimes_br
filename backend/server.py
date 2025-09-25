@@ -257,6 +257,35 @@ async def check_user_banned(user_id: str) -> bool:
     })
     return ban is not None
 
+async def can_view_user_profile(viewer_id: str, profile_user_id: str) -> bool:
+    """Verifica se o usuário pode ver o perfil de outro usuário"""
+    if viewer_id == profile_user_id:
+        return True
+    
+    profile_user = await db.users.find_one({"id": profile_user_id})
+    if not profile_user or not profile_user.get("is_private", False):
+        return True
+    
+    # Perfil privado - verificar se são amigos
+    viewer = await db.users.find_one({"id": viewer_id})
+    if viewer and profile_user_id in viewer.get("friends", []):
+        return True
+    
+    return False
+
+async def initialize_moderator():
+    """Inicializar usuário moderador se não existir"""
+    moderator = await db.users.find_one({"email": "Moderador@Moderador.com"})
+    if not moderator:
+        mod_user = User(
+            email="Moderador@Moderador.com",
+            name="Moderador Filmes.br",
+            description="Administrador da plataforma Filmes.br",
+            role="moderator"
+        )
+        await db.users.insert_one(mod_user.dict())
+        print("Moderador criado com sucesso")
+
 # Auth endpoints
 @api_router.post("/auth/login")
 async def login_user(email: str):
