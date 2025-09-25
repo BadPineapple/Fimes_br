@@ -1981,6 +1981,41 @@ const FilmDetailPage = () => {
               <p className="text-gray-700 leading-relaxed">{film.description}</p>
             </div>
             
+            {/* User Lists Actions */}
+            {user && (
+              <div>
+                <h3 className="text-lg font-semibold text-green-800 mb-3">Minhas Listas</h3>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant={userLists.favorites ? "default" : "outline"}
+                    className={`${userLists.favorites ? 'bg-red-500 hover:bg-red-600' : 'border-red-500 text-red-600 hover:bg-red-50'}`}
+                    onClick={() => toggleFilmList('favorites')}
+                  >
+                    <Star className={`mr-2 ${userLists.favorites ? 'fill-white' : ''}`} size={16} />
+                    {userLists.favorites ? 'Favoritado' : 'Favoritar'}
+                  </Button>
+                  
+                  <Button
+                    variant={userLists.watched ? "default" : "outline"}
+                    className={`${userLists.watched ? 'bg-green-500 hover:bg-green-600' : 'border-green-500 text-green-600 hover:bg-green-50'}`}
+                    onClick={() => toggleFilmList('watched')}
+                  >
+                    <span className="mr-2">{userLists.watched ? '✓' : '👁️'}</span>
+                    {userLists.watched ? 'Assistido' : 'Marcar como Assistido'}
+                  </Button>
+                  
+                  <Button
+                    variant={userLists.to_watch ? "default" : "outline"}
+                    className={`${userLists.to_watch ? 'bg-blue-500 hover:bg-blue-600' : 'border-blue-500 text-blue-600 hover:bg-blue-50'}`}
+                    onClick={() => toggleFilmList('to_watch')}
+                  >
+                    <span className="mr-2">{userLists.to_watch ? '📋' : '⏰'}</span>
+                    {userLists.to_watch ? 'Na Lista' : 'Quero Assistir'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {film.watch_links && film.watch_links.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-green-800 mb-3">Onde Assistir</h3>
