@@ -86,6 +86,10 @@ const Navigation = () => {
                 <Search size={18} />
                 Encontrar
               </Link>
+              <Link to="/apoie" className="text-white hover:text-yellow-200 flex items-center gap-2">
+                <Star size={18} />
+                Apoie
+              </Link>
               {user && (
                 <Link to="/profile" className="text-white hover:text-yellow-200 flex items-center gap-2">
                   <User size={18} />
