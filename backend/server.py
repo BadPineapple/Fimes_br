@@ -105,6 +105,22 @@ async def get_current_user(user_id: str):
         raise HTTPException(status_code=404, detail="User not found")
     return User(**user)
 
+@api_router.get("/auth/test-user")
+async def get_test_user():
+    """Get pre-authenticated test user"""
+    test_email = "cinefilo.teste@filmes.br"
+    user = await db.users.find_one({"email": test_email})
+    if not user:
+        # Create test user if doesn't exist
+        test_user = User(
+            email=test_email,
+            name="Cinéfilo Brasileiro",
+            description="Apaixonado pelo cinema nacional brasileiro. Amo desde os clássicos do Cinema Novo até as produções contemporâneas."
+        )
+        await db.users.insert_one(test_user.dict())
+        return test_user
+    return User(**user)
+
 # User endpoints
 @api_router.put("/users/{user_id}")
 async def update_user(user_id: str, updates: dict):
