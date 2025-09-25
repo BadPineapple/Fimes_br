@@ -491,6 +491,129 @@ async def get_user_ratings(user_id: str):
     
     return result
 
+# Film Lists endpoints
+@api_router.post("/users/{user_id}/film-lists")
+async def add_to_film_list(user_id: str, list_data: FilmListCreate, request: Request):
+    """Add film to user's list (watched, to_watch, favorites)"""
+    # Rate limiting
+    client_ip = request.client.host
+    if not check_rate_limit(client_ip, max_requests=10, window_seconds=60):
+        raise HTTPException(status_code=429, detail="Muitas tentativas.")
+    
+    # Verificar se usuário está banido
+    if await check_user_banned(user_id):
+        raise HTTPException(status_code=403, detail="Usuário banido do sistema.")
+    
+    # Verificar se o filme existe
+    film = await db.films.find_one({"id": list_data.film_id})
+    if not film:
+        raise HTTPException(status_code=404, detail="Filme não encontrado")
+    
+    # Remove existing entry for this film and list type
+    await db.film_lists.delete_one({
+        "user_id": user_id,
+        "film_id": list_data.film_id,
+        "list_type": list_data.list_type
+    })
+    
+    # Add new entry
+    film_list = FilmList(user_id=user_id, **list_data.dict())
+    await db.film_lists.insert_one(film_list.dict())
+    
+    # Update film metrics
+    await update_film_metrics(list_data.film_id)
+    
+    return {"message": "Filme adicionado à lista com sucesso"}
+
+@api_router.delete("/users/{user_id}/film-lists/{film_id}/{list_type}")
+async def remove_from_film_list(user_id: str, film_id: str, list_type: str):
+    """Remove film from user's list"""
+    result = await db.film_lists.delete_one({
+        "user_id": user_id,
+        "film_id": film_id,
+        "list_type": list_type
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Item não encontrado na lista")
+    
+    # Update film metrics
+    await update_film_metrics(film_id)
+    
+    return {"message": "Filme removido da lista com sucesso"}
+
+@api_router.get("/users/{user_id}/film-lists/{list_type}")
+async def get_user_film_list(user_id: str, list_type: str, viewer_id: str = None):
+    """Get user's film list"""
+    # Verificar permissões de privacidade
+    if viewer_id and not await can_view_user_profile(viewer_id, user_id):
+        raise HTTPException(status_code=403, detail="Perfil privado")
+    
+    pipeline = [
+        {"$match": {"user_id": user_id, "list_type": list_type}},
+        {"$lookup": {
+            "from": "films",
+            "localField": "film_id",
+            "foreignField": "id",
+            "as": "film"
+        }},
+        {"$sort": {"created_at": -1}}
+    ]
+    
+    results = await db.film_lists.aggregate(pipeline).to_list(1000)
+    
+    films = []
+    for result in results:
+        film_info = result.get("film", [{}])[0] if result.get("film") else {}
+        if film_info:
+            films.append({
+                **Film(**film_info).dict(),
+                "added_at": result["created_at"]
+            })
+    
+    return films
+
+async def update_film_metrics(film_id: str):
+    """Atualizar métricas do filme"""
+    # Contar favoritos
+    favorites_count = await db.film_lists.count_documents({
+        "film_id": film_id,
+        "list_type": "favorites"
+    })
+    
+    # Contar assistidos
+    watched_count = await db.film_lists.count_documents({
+        "film_id": film_id,
+        "list_type": "watched"
+    })
+    
+    # Calcular média de avaliações
+    pipeline = [
+        {"$match": {"film_id": film_id}},
+        {"$group": {"_id": None, "average": {"$avg": "$rating"}, "count": {"$sum": 1}}}
+    ]
+    rating_result = await db.ratings.aggregate(pipeline).to_list(1)
+    
+    avg_rating = 0.0
+    ratings_count = 0
+    if rating_result:
+        avg_rating = round(rating_result[0]["average"], 2)
+        ratings_count = rating_result[0]["count"]
+    
+    # Atualizar ou criar métricas
+    await db.film_metrics.update_one(
+        {"film_id": film_id},
+        {"$set": {
+            "film_id": film_id,
+            "favorites_count": favorites_count,
+            "watched_count": watched_count,
+            "average_rating": avg_rating,
+            "ratings_count": ratings_count,
+            "updated_at": datetime.now(timezone.utc)
+        }},
+        upsert=True
+    )
+
 # Comment Report endpoints
 @api_router.post("/comments/report")
 async def report_comment(report_data: CommentReportCreate, user_id: str, request: Request):
