@@ -64,6 +64,7 @@ const AuthProvider = ({ children }) => {
 const Navigation = () => {
   const { user, logout } = React.useContext(AuthContext);
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <nav className="bg-gradient-to-r from-yellow-600 via-green-700 to-blue-800 shadow-lg">
