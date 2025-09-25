@@ -798,6 +798,40 @@ const FilmDetailPage = () => {
       fetchFilmData(); // Refresh ratings
     } catch (error) {
       console.error('Error submitting rating:', error);
+      alert('Erro ao enviar avaliação. Verifique se o comentário atende às diretrizes da comunidade.');
+    }
+  };
+
+  const handleReportComment = async (commentId) => {
+    if (!user) return;
+    
+    const reason = prompt('Motivo da denúncia:\n1. spam\n2. inappropriate\n3. harassment\n4. off_topic\n5. other\n\nDigite o número ou palavra:');
+    const reasonMap = {
+      '1': 'spam',
+      '2': 'inappropriate', 
+      '3': 'harassment',
+      '4': 'off_topic',
+      '5': 'other'
+    };
+    
+    const finalReason = reasonMap[reason] || reason;
+    if (!['spam', 'inappropriate', 'harassment', 'off_topic', 'other'].includes(finalReason)) {
+      alert('Motivo inválido');
+      return;
+    }
+    
+    const description = prompt('Descrição adicional (opcional):');
+    
+    try {
+      await axios.post(`${API}/comments/report?user_id=${user.id}`, {
+        comment_id: commentId,
+        reason: finalReason,
+        description: description || undefined
+      });
+      alert('Denúncia enviada com sucesso! Nossa equipe irá analisar.');
+    } catch (error) {
+      console.error('Error reporting comment:', error);
+      alert('Erro ao enviar denúncia. ' + (error.response?.data?.detail || ''));
     }
   };
 
