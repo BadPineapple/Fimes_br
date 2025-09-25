@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Textarea } from './components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './components/ui/dialog';
-import { Star, Search, MessageSquare, Film, Sparkles, User, Home } from 'lucide-react';
+import { Star, Search, MessageSquare, Film, Sparkles, User, Home, Menu, X } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
