@@ -352,6 +352,86 @@ async def initialize_moderator():
         await db.users.insert_one(mod_user.dict())
         logging.info("Moderador criado com sucesso")
 
+async def initialize_sample_films():
+    """Inicializar filmes de exemplo se não existirem"""
+    film_count = await db.films.count_documents({})
+    if film_count == 0:
+        sample_films = [
+            {
+                "title": "Cidade de Deus",
+                "description": "Buscapé é um jovem pobre, negro e muito sensível, que cresce em um universo de muita violência. Ele vive na Cidade de Deus, favela carioca conhecida por ser um dos locais mais violentos do Rio.",
+                "year": 2002,
+                "director": "Fernando Meirelles",
+                "actors": ["Alexandre Rodrigues", "Leandro Firmino", "Phellipe Haagensen", "Douglas Silva"],
+                "imdb_rating": 8.6,
+                "letterboxd_rating": 4.3,
+                "tags": ["Drama", "Crime", "Favela", "Rio de Janeiro"],
+                "watch_links": [{"platform": "Netflix", "url": "https://netflix.com"}, {"platform": "Globoplay", "url": "https://globoplay.globo.com"}]
+            },
+            {
+                "title": "Tropa de Elite",
+                "description": "Nascimento, capitão da Tropa de Elite do Rio de Janeiro, é designado para eliminar grupos de traficantes de armas em favelas. Além disso, ele deve encontrar um substituto para o seu posto.",
+                "year": 2007,
+                "director": "José Padilha",
+                "actors": ["Wagner Moura", "André Ramiro", "Caio Junqueira", "Milhem Cortaz"],
+                "imdb_rating": 8.0,
+                "letterboxd_rating": 4.1,
+                "tags": ["Ação", "Drama", "Policial", "BOPE"],
+                "watch_links": [{"platform": "Amazon Prime", "url": "https://primevideo.com"}, {"platform": "Telecine", "url": "https://telecine.globo.com"}]
+            },
+            {
+                "title": "Central do Brasil",
+                "description": "Dora é uma ex-professora que escreve cartas para pessoas analfabetas na estação Central do Brasil. Após a morte da mãe de Josué, ela embarca numa jornada com o menino para encontrar o pai dele.",
+                "year": 1998,
+                "director": "Walter Salles",
+                "actors": ["Fernanda Montenegro", "Vinícius de Oliveira", "Marília Pêra", "Othon Bastos"],
+                "imdb_rating": 8.0,
+                "letterboxd_rating": 4.2,
+                "tags": ["Drama", "Road Movie", "Sertão", "Fernanda Montenegro"],
+                "watch_links": [{"platform": "Globoplay", "url": "https://globoplay.globo.com"}]
+            },
+            {
+                "title": "O Auto da Compadecida",
+                "description": "As aventuras de João Grilo e Chicó, dois nordestinos pobres que vivem de pequenos golpes para sobreviver. Eles se envolvem com os mais poderosos de uma pequena cidade e acabam enfrentando o próprio diabo.",
+                "year": 2000,
+                "director": "Guel Arraes",
+                "actors": ["Matheus Nachtergaele", "Selton Mello", "Rogério Cardoso", "Denise Fraga"],
+                "imdb_rating": 8.7,
+                "letterboxd_rating": 4.4,
+                "tags": ["Comédia", "Drama", "Nordeste", "Literatura", "Ariano Suassuna"],
+                "watch_links": [{"platform": "Globoplay", "url": "https://globoplay.globo.com"}, {"platform": "YouTube", "url": "https://youtube.com"}]
+            },
+            {
+                "title": "Aquarius",
+                "description": "Clara, uma jornalista aposentada de 65 anos, é a última moradora de um edifício que uma construtora quer demolir. Ela se recusa a sair e luta para preservar sua memória e história.",
+                "year": 2016,
+                "director": "Kleber Mendonça Filho",
+                "actors": ["Sônia Braga", "Maeve Jinkings", "Irandhir Santos", "Humberto Carrão"],
+                "imdb_rating": 7.3,
+                "letterboxd_rating": 4.1,
+                "tags": ["Drama", "Recife", "Sônia Braga", "Resistência"],
+                "watch_links": [{"platform": "MUBI", "url": "https://mubi.com"}]
+            },
+            {
+                "title": "Bacurau",
+                "description": "Bacurau, uma pequena cidade do sertão brasileiro, enfrenta estranhos acontecimentos após desaparecer dos mapas. Os moradores precisam se unir para defender sua comunidade de uma ameaça externa.",
+                "year": 2019,
+                "director": "Kleber Mendonça Filho, Juliano Dornelles",
+                "actors": ["Bárbara Colen", "Thomas Aquino", "Silvero Pereira", "Thardelly Lima"],
+                "imdb_rating": 7.3,
+                "letterboxd_rating": 4.2,
+                "tags": ["Drama", "Thriller", "Sertão", "Ficção Científica"],
+                "watch_links": [{"platform": "Globoplay", "url": "https://globoplay.globo.com"}, {"platform": "Amazon Prime", "url": "https://primevideo.com"}]
+            }
+        ]
+        
+        for film_data in sample_films:
+            film = Film(**film_data)
+            await db.films.insert_one(film.dict())
+            await update_film_metrics(film.id)
+        
+        logging.info(f"{len(sample_films)} filmes de exemplo criados")
+
 async def update_film_metrics(film_id: str):
     """Atualizar métricas do filme"""
     # Contar favoritos
