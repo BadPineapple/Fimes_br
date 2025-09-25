@@ -66,64 +66,138 @@ const Navigation = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const navigationItems = [
+    { to: "/", icon: Home, label: "Home" },
+    { to: "/films", icon: Film, label: "Filmes" },
+    { to: "/encontrar", icon: Search, label: "Encontrar" },
+    { to: "/apoie", icon: Star, label: "Apoie" },
+    ...(user ? [{ to: "/profile", icon: User, label: "Perfil" }] : []),
+    ...(user && user.role === 'moderator' ? [{ to: "/moderator", icon: MessageSquare, label: "Dashboard", special: true }] : [])
+  ];
+
   return (
-    <nav className="bg-gradient-to-r from-yellow-600 via-green-700 to-blue-800 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center space-x-8">
-            <Link to="/" className="text-2xl font-bold text-white">
-              Filmes.br
-            </Link>
-            <div className="hidden md:flex space-x-6">
-              <Link to="/" className="text-white hover:text-yellow-200 flex items-center gap-2">
-                <Home size={18} />
-                Home
+    <>
+      <nav className="bg-gradient-to-r from-yellow-600 via-green-700 to-blue-800 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center space-x-8">
+              <Link to="/" className="text-2xl font-bold text-white">
+                Filmes.br
               </Link>
-              <Link to="/films" className="text-white hover:text-yellow-200 flex items-center gap-2">
-                <Film size={18} />
-                Filmes
-              </Link>
-              <Link to="/encontrar" className="text-white hover:text-yellow-200 flex items-center gap-2">
-                <Search size={18} />
-                Encontrar
-              </Link>
-              <Link to="/apoie" className="text-white hover:text-yellow-200 flex items-center gap-2">
-                <Star size={18} />
-                Apoie
-              </Link>
-              {user && (
-                <Link to="/profile" className="text-white hover:text-yellow-200 flex items-center gap-2">
-                  <User size={18} />
-                  Perfil
-                </Link>
-              )}
-              {user && user.role === 'moderator' && (
-                <Link to="/moderator" className="text-white hover:text-yellow-200 flex items-center gap-2 bg-blue-600 px-3 py-1 rounded">
-                  <MessageSquare size={18} />
-                  Dashboard
-                </Link>
-              )}
+              
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex space-x-6">
+                {navigationItems.map((item) => (
+                  <Link 
+                    key={item.to}
+                    to={item.to} 
+                    className={`text-white hover:text-yellow-200 flex items-center gap-2 ${
+                      item.special ? 'bg-blue-600 px-3 py-1 rounded' : ''
+                    }`}
+                  >
+                    <item.icon size={18} />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="md:hidden text-white hover:text-yellow-200"
+              >
+                <Menu size={24} />
+              </button>
+
+              {/* User info - Desktop */}
+              <div className="hidden md:flex items-center space-x-4">
+                {user ? (
+                  <>
+                    <span className="text-white">Olá, {user.name}</span>
+                    <Avatar>
+                      <AvatarImage src={user.avatar_url} />
+                      <AvatarFallback>{user.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <Button variant="outline" onClick={logout}>
+                      Sair
+                    </Button>
+                  </>
+                ) : (
+                  <LoginDialog />
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            {user ? (
-              <>
-                <span className="text-white">Olá, {user.name}</span>
-                <Avatar>
-                  <AvatarImage src={user.avatar_url} />
-                  <AvatarFallback>{user.name[0]}</AvatarFallback>
-                </Avatar>
-                <Button variant="outline" onClick={logout}>
-                  Sair
-                </Button>
-              </>
-            ) : (
-              <LoginDialog />
-            )}
+        </div>
+      </nav>
+
+      {/* Mobile Sidebar */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-yellow-600 via-green-700 to-blue-800 shadow-xl">
+            <div className="flex items-center justify-between p-4 border-b border-white border-opacity-20">
+              <h2 className="text-xl font-bold text-white">Filmes.br</h2>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="text-white hover:text-yellow-200"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="py-4">
+              {/* User section in sidebar */}
+              <div className="px-4 pb-4 border-b border-white border-opacity-20">
+                {user ? (
+                  <div className="flex items-center space-x-3">
+                    <Avatar>
+                      <AvatarImage src={user.avatar_url} />
+                      <AvatarFallback className="bg-white text-green-800">{user.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-white font-medium">{user.name}</p>
+                      <button
+                        onClick={() => {
+                          logout();
+                          setSidebarOpen(false);
+                        }}
+                        className="text-yellow-200 text-sm hover:text-yellow-100"
+                      >
+                        Sair
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <LoginDialog />
+                  </div>
+                )}
+              </div>
+
+              {/* Navigation links */}
+              <div className="mt-4 space-y-2">
+                {navigationItems.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center space-x-3 px-4 py-3 text-white hover:bg-white hover:bg-opacity-10 ${
+                      item.special ? 'bg-blue-600 bg-opacity-30' : ''
+                    }`}
+                  >
+                    <item.icon size={20} />
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+      )}
+    </>
   );
 };
 
