@@ -1584,9 +1584,11 @@ const ProfilePage = () => {
   };
 
   const fetchListFilms = async (listType) => {
-    if (!user) return;
+    if (!isOwnProfile || !user) return; // Only allow for own profile
+    
+    const targetUserId = profileUserId || user.id;
     try {
-      const response = await axios.get(`${API}/users/${user.id}/film-lists/${listType}?viewer_id=${user.id}`);
+      const response = await axios.get(`${API}/users/${targetUserId}/film-lists/${listType}?viewer_id=${user.id}`);
       setListFilms(response.data);
     } catch (error) {
       console.error('Error fetching list films:', error);
@@ -1594,8 +1596,10 @@ const ProfilePage = () => {
   };
 
   useEffect(() => {
-    fetchListFilms(selectedList);
-  }, [selectedList, user]);
+    if (isOwnProfile) {
+      fetchListFilms(selectedList);
+    }
+  }, [selectedList, user, isOwnProfile]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
