@@ -398,6 +398,141 @@ async def get_user_ratings(user_id: str):
     
     return result
 
+# Comment Report endpoints
+@api_router.post("/comments/report")
+async def report_comment(report_data: CommentReportCreate, user_id: str, request: Request):
+    """Report a comment for moderation"""
+    # Rate limiting
+    client_ip = request.client.host
+    if not check_rate_limit(client_ip, max_requests=3, window_seconds=300):  # 3 denúncias por 5 min
+        raise HTTPException(status_code=429, detail="Muitas denúncias. Tente novamente em alguns minutos.")
+    
+    # Verificar se usuário está banido
+    if await check_user_banned(user_id):
+        raise HTTPException(status_code=403, detail="Usuário banido do sistema.")
+    
+    # Verificar se o comentário existe
+    comment = await db.ratings.find_one({"id": report_data.comment_id})
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comentário não encontrado")
+    
+    # Verificar se já não foi reportado pelo mesmo usuário
+    existing_report = await db.comment_reports.find_one({
+        "comment_id": report_data.comment_id,
+        "reporter_user_id": user_id
+    })
+    if existing_report:
+        raise HTTPException(status_code=400, detail="Você já denunciou este comentário")
+    
+    report = CommentReport(reporter_user_id=user_id, **report_data.dict())
+    await db.comment_reports.insert_one(report.dict())
+    
+    return {"message": "Denúncia registrada com sucesso. Nossa equipe irá analisar em breve."}
+
+@api_router.get("/moderation/reports")
+async def get_pending_reports(moderator_id: str):
+    """Get pending reports for moderation (moderator only)"""
+    # Verificar se é moderador
+    moderator = await db.users.find_one({"id": moderator_id})
+    if not moderator or moderator.get("role") != "moderator":
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas moderadores.")
+    
+    pipeline = [
+        {"$match": {"status": "pending"}},
+        {"$lookup": {
+            "from": "ratings",
+            "localField": "comment_id",
+            "foreignField": "id",
+            "as": "comment"
+        }},
+        {"$lookup": {
+            "from": "users",
+            "localField": "reporter_user_id",
+            "foreignField": "id",
+            "as": "reporter"
+        }},
+        {"$sort": {"created_at": -1}}
+    ]
+    
+    reports = await db.comment_reports.aggregate(pipeline).to_list(100)
+    
+    result = []
+    for report in reports:
+        comment_info = report.get("comment", [{}])[0] if report.get("comment") else {}
+        reporter_info = report.get("reporter", [{}])[0] if report.get("reporter") else {}
+        
+        result.append({
+            **CommentReport(**report).dict(),
+            "comment_text": comment_info.get("comment", "Comentário não encontrado"),
+            "reporter_name": reporter_info.get("name", "Usuário desconhecido")
+        })
+    
+    return result
+
+@api_router.post("/moderation/reports/{report_id}/resolve")
+async def resolve_report(report_id: str, action: str, moderator_id: str):
+    """Resolve a comment report (moderator only)"""
+    # Verificar se é moderador
+    moderator = await db.users.find_one({"id": moderator_id})
+    if not moderator or moderator.get("role") != "moderator":
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas moderadores.")
+    
+    if action not in ["dismiss", "delete_comment", "ban_user"]:
+        raise HTTPException(status_code=400, detail="Ação inválida")
+    
+    # Buscar a denúncia
+    report = await db.comment_reports.find_one({"id": report_id})
+    if not report:
+        raise HTTPException(status_code=404, detail="Denúncia não encontrada")
+    
+    # Buscar o comentário
+    comment = await db.ratings.find_one({"id": report["comment_id"]})
+    
+    if action == "delete_comment" and comment:
+        # Deletar comentário
+        await db.ratings.delete_one({"id": report["comment_id"]})
+        
+    elif action == "ban_user" and comment:
+        # Banir usuário (24 horas)
+        ban = UserBan(
+            user_id=comment["user_id"],
+            moderator_id=moderator_id,
+            reason="Violação das regras da comunidade",
+            duration_hours=24,
+            expires_at=datetime.now(timezone.utc).replace(hour=datetime.now(timezone.utc).hour + 24)
+        )
+        await db.user_bans.insert_one(ban.dict())
+        
+        # Também deletar o comentário
+        await db.ratings.delete_one({"id": report["comment_id"]})
+    
+    # Marcar denúncia como resolvida
+    await db.comment_reports.update_one(
+        {"id": report_id},
+        {"$set": {"status": "reviewed"}}
+    )
+    
+    return {"message": f"Denúncia resolvida com ação: {action}"}
+
+# Filters endpoint
+@api_router.get("/films/by-genre/{genre}")
+async def get_films_by_genre(genre: str):
+    """Get films filtered by genre"""
+    films = await db.films.find({"tags": {"$regex": genre, "$options": "i"}}).to_list(1000)
+    return [Film(**film) for film in films]
+
+@api_router.get("/films/genres")
+async def get_available_genres():
+    """Get all available genres/tags"""
+    pipeline = [
+        {"$unwind": "$tags"},
+        {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    
+    genres = await db.films.aggregate(pipeline).to_list(100)
+    return [{"genre": genre["_id"], "count": genre["count"]} for genre in genres]
+
 # AI Recommendation endpoint
 @api_router.post("/ai/recommend", response_model=AIRecommendationResponse)
 async def get_ai_recommendations(request: AIRecommendationRequest):
