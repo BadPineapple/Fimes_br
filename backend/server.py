@@ -133,6 +133,50 @@ class UserBan(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: Optional[datetime] = None
 
+class FilmList(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    film_id: str
+    list_type: str  # "watched", "to_watch", "favorites"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class FilmListCreate(BaseModel):
+    film_id: str
+    list_type: str
+    
+    @validator('list_type')
+    def validate_list_type(cls, v):
+        allowed_types = ['watched', 'to_watch', 'favorites']
+        if v not in allowed_types:
+            raise ValueError('Tipo de lista inválido')
+        return v
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    avatar_url: Optional[str] = None
+    is_private: Optional[bool] = None
+    is_supporter: Optional[bool] = None  # Only moderators can set this
+
+class ModeratorAction(BaseModel):
+    action_type: str  # "delete_comment", "ban_user", "add_film", "mark_supporter"
+    password: str
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if v != "1357":  # 4 dígitos não repetidos
+            raise ValueError('Senha incorreta')
+        return v
+
+class FilmMetrics(BaseModel):
+    film_id: str
+    views: int = 0
+    favorites_count: int = 0
+    watched_count: int = 0
+    average_rating: float = 0.0
+    ratings_count: int = 0
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class ContentFilter:
     """Filtro de conteúdo para prevenir spam, links maliciosos e linguagem inadequada"""
     
