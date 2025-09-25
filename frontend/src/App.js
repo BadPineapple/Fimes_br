@@ -770,6 +770,7 @@ const AddFilmForm = ({ user, onSuccess }) => {
         imdb_rating: formData.imdb_rating ? parseFloat(formData.imdb_rating) : null,
         letterboxd_rating: formData.letterboxd_rating ? parseFloat(formData.letterboxd_rating) : null,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        actors: formData.actors.split(',').map(actor => actor.trim()).filter(actor => actor),
         watch_links: formData.watch_links.filter(link => link.platform && link.url)
       };
 
