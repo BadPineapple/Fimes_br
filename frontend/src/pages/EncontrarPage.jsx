@@ -1,7 +1,7 @@
 // frontend/src/pages/EncontrarPage.jsx
 import React from "react";
 import api from "../services/api";
-import { useAuth } from "../contexts/AuthContext"; // <- corrigido
+import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Textarea } from "../components/ui/textarea";

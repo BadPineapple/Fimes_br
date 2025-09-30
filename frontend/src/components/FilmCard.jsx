@@ -1,4 +1,3 @@
-// frontend/src/components/FilmCard.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "./ui/card";
@@ -12,7 +11,6 @@ export default function FilmCard({ film }) {
   const title = film.title || "Sem título";
   const year = film.year || null;
 
-  // rating preferencial: 'rating' (0–10); fallback: imdb_rating (0–10)
   const ratingRaw =
     typeof film?.rating === "number"
       ? film.rating

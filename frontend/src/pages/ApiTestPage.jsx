@@ -8,7 +8,6 @@ export default function ApiTestPage() {
       try {
         setResult("Testando API...");
         
-        // Teste direto com fetch
         const response = await fetch("http://localhost:8001/api/films");
         const data = await response.json();
         

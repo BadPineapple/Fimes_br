@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from "react";
 import {
   BrowserRouter,
@@ -7,7 +6,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { AuthProvider, useAuth } from "./contexts/AuthContext"; // <- corrigido
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
 
@@ -20,8 +19,6 @@ import ApoiePage from "./pages/ApoiePage";
 import ModeratorDashboard from "./pages/ModeratorDashboard";
 import ApiTestPage from "./pages/ApiTestPage";
 
-// (opcional) Toaster global do shadcn, se existir no seu projeto
-// Se não tiver esse arquivo, remova as 2 linhas abaixo.
 import { Toaster } from "./components/ui/toaster";
 
 import "./App.css";

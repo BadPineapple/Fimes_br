@@ -2,7 +2,7 @@
 import React from "react";
 import api from "../services/api";
 import { useParams, Link } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext"; // <- corrigido
+import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -34,7 +34,6 @@ export default function ProfilePage() {
     setIsOwnProfile(isOwn);
     if (!targetId) return;
 
-    // Carrega dados do perfil
     (async () => {
       try {
         if (isOwn) {
@@ -51,7 +50,6 @@ export default function ProfilePage() {
           setProfileUser(r.data);
         }
 
-        // Carrega avaliações + favoritos (se próprio)
         const viewerId = user ? user.id : null;
         const [rRatings, rFav] = await Promise.all([
           api.get(`/users/${targetId}/ratings`),
@@ -85,7 +83,6 @@ export default function ProfilePage() {
 
   React.useEffect(() => {
     if (isOwnProfile) fetchListFilms(selectedList);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedList, isOwnProfile, user?.id, profileUserId]);
 
   const fetchListFilms = async (type) => {
@@ -113,7 +110,6 @@ export default function ProfilePage() {
     }
     try {
       await api.put(`/users/${user.id}`, payload);
-      // Atualiza estado local sem reload
       setProfileUser((prev) => (prev ? { ...prev, ...payload } : prev));
       setIsEditing(false);
       toast({ title: "Perfil atualizado!", duration: 2000 });

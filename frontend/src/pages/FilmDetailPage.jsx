@@ -2,7 +2,7 @@
 import React from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../services/api";
-import { useAuth } from "../contexts/AuthContext"; // <- corrigido (sem 's')
+import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Textarea } from "../components/ui/textarea";
@@ -30,12 +30,10 @@ export default function FilmDetailPage() {
     if (!id) return;
     setLoading(true);
     try {
-      // 1) Carrega filme
       const filmRes = await api.get(`/films/${id}`);
       const filmData = filmRes.data;
       setFilm(filmData);
 
-      // 2) Carrega ratings e média em paralelo
       const [ratingsRes, avgRes] = await Promise.allSettled([
         api.get(`/films/${id}/ratings`),
         api.get(`/films/${id}/ratings/average`)
@@ -47,7 +45,6 @@ export default function FilmDetailPage() {
       setRatings(ratingsData);
       setAvg(avgData);
 
-      // 3) Dados do usuário (nota prévia e listas) se logado
       if (user?.id) {
         const existing = ratingsData.find((x) => x.user_id === user.id);
         if (existing) setUserRating({ rating: existing.rating ?? 0, comment: existing.comment ?? "" });
@@ -97,11 +94,11 @@ export default function FilmDetailPage() {
     setSavingRating(true);
     try {
       await api.post(
-        `/films/${id}/ratings?user_id=${user.id}`, // compat atual
+        `/films/${id}/ratings?user_id=${user.id}`,
         { film_id: s(id), rating: n, comment: userRating.comment?.trim() ?? "" }
       );
       toast({ title: "Avaliação salva!", duration: 2000 });
-      await load(); // recarrega após salvar
+      await load();
     } catch (e) {
       console.error(e);
       toast({ title: "Erro ao enviar avaliação.", duration: 3000 });
@@ -115,7 +112,7 @@ export default function FilmDetailPage() {
       toast({ title: "Faça login para denunciar.", duration: 2500 });
       return;
     }
-    // Mantém prompt como fallback simples. Ideal seria abrir um Dialog com select+textarea.
+    
     const reason = prompt("Motivo (spam, inappropriate, harassment, off_topic, other):");
     if (!reason) return;
     const description = prompt("Descrição (opcional):") || undefined;

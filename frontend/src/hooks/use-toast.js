@@ -1,11 +1,10 @@
 "use client";
-// Inspired by react-hot-toast library
+
 import * as React from "react";
 
 const TOAST_LIMIT = 1;
-const DEFAULT_DURATION = 4000; // 4s padrão
-// Mantém compat com quem não passar duration:
-const TOAST_REMOVE_DELAY_FALLBACK = 10000; // 10s de segurança
+const DEFAULT_DURATION = 4000; 
+const TOAST_REMOVE_DELAY_FALLBACK = 10000;
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -20,10 +19,9 @@ function genId() {
   return count.toString();
 }
 
-const toastTimeouts = new Map(); // id -> timeoutId
+const toastTimeouts = new Map();
 
 function scheduleRemove(toastId, delayMs) {
-  // evita múltiplos timeouts para o mesmo id
   if (toastTimeouts.has(toastId)) return;
 
   const timeout = setTimeout(() => {
@@ -53,7 +51,6 @@ export const reducer = (state, action) => {
     case actionTypes.DISMISS_TOAST: {
       const { toastId } = action;
 
-      // agenda remoção com a duração definida no toast (ou fallback)
       if (toastId) {
         const t = state.toasts.find((x) => x.id === toastId);
         const delay = t?.duration ?? DEFAULT_DURATION;
@@ -75,13 +72,10 @@ export const reducer = (state, action) => {
 
     case actionTypes.REMOVE_TOAST: {
       if (action.toastId === undefined) {
-        // limpar todos
-        // cancela timeouts pendentes
         toastTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
         toastTimeouts.clear();
         return { ...state, toasts: [] };
       }
-      // cancela o timeout desse toast (se existir)
       const timeoutId = toastTimeouts.get(action.toastId);
       if (timeoutId) {
         clearTimeout(timeoutId);
@@ -106,7 +100,6 @@ function dispatch(action) {
   listeners.forEach((listener) => listener(memoryState));
 }
 
-// API principal: cria um toast
 function toast({ duration, ...props }) {
   const id = genId();
 
@@ -149,7 +142,7 @@ function useToast() {
       const index = listeners.indexOf(setState);
       if (index > -1) listeners.splice(index, 1);
     };
-  }, []); // registra apenas uma vez
+  }, []); 
 
   const dismiss = (toastId) =>
     dispatch({ type: actionTypes.DISMISS_TOAST, toastId });

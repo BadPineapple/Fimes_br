@@ -8,7 +8,6 @@ import { Textarea } from "../ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { useToast } from "../../hooks/use-toast";
 
-// Validação simples de URL http/https
 function isValidHttpUrl(str) {
   try {
     const u = new URL(str);
@@ -55,11 +54,10 @@ export default function AddFilmForm({ onSuccess }) {
     setShowConfirm(true);
   };
 
-  // Normaliza números com bounds
   function parseYear(v) {
     const n = Number(v);
     if (!Number.isFinite(n)) return null;
-    if (n < 1895 || n > 2100) return null; // cinema começou ~1895
+    if (n < 1895 || n > 2100) return null;
     return n;
   }
   function parseImdb(v) {
@@ -73,23 +71,20 @@ export default function AddFilmForm({ onSuccess }) {
     return Math.min(5, Math.max(0, n));
   }
   function computeUnifiedRating(imdb10, lb5) {
-    // Média simples normalizada para 0–10, se ambos existirem
     const vals = [];
     if (imdb10 != null) vals.push(imdb10);
-    if (lb5 != null) vals.push(lb5 * 2); // converte 0–5 -> 0–10
+    if (lb5 != null) vals.push(lb5 * 2); 
     if (!vals.length) return null;
     const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    return Math.round(avg * 10) / 10; // 1 casa decimal
+    return Math.round(avg * 10) / 10; 
   }
 
   const confirm = async () => {
-    // ⚠️ Observação: senha no cliente é fácil de inspecionar. Ideal validar no backend via role.
     if (password !== "1357") {
       toast({ title: "Senha incorreta", duration: 2500 });
       return;
     }
 
-    // Sanitização e mapeamento p/ contrato usado nas outras telas
     const year = parseYear(form.year);
     const imdb = parseImdb(form.imdb_rating);
     const lb = parseLb(form.letterboxd_rating);
@@ -108,7 +103,6 @@ export default function AddFilmForm({ onSuccess }) {
       .map((l) => ({ platform: l.platform.trim(), url: l.url.trim() }))
       .filter((l) => l.platform && l.url && isValidHttpUrl(l.url));
 
-    // Mapeia para campos esperados em outras partes do front:
     const payload = {
       title: form.title.trim(),
       poster_url: form.banner_url.trim() || undefined,
@@ -123,12 +117,11 @@ export default function AddFilmForm({ onSuccess }) {
         letterboxd: lb ?? null,
       },
       watch_links,
-      // Mantém também os nomes “originais” se seu backend espera esses campos:
       banner_url: form.banner_url.trim() || undefined,
       description: form.description.trim(),
       imdb_rating: imdb,
       letterboxd_rating: lb,
-      tags, // array já normalizado
+      tags, 
     };
 
     if (!payload.title || !payload.synopsis) {

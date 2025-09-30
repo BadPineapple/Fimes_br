@@ -13,16 +13,14 @@ export default function FilmsPage() {
   const [genres, setGenres] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [debounced, setDebounced] = React.useState(""); // debounce da busca
+  const [debounced, setDebounced] = React.useState("");
   const [selectedGenre, setSelectedGenre] = React.useState("");
 
-  // Debounce da busca (300ms)
   React.useEffect(() => {
     const t = setTimeout(() => setDebounced(searchTerm.trim().toLowerCase()), 300);
     return () => clearTimeout(t);
   }, [searchTerm]);
 
-  // Carregamento inicial (lista + gêneros)
   React.useEffect(() => {
     let mounted = true;
     (async () => {
@@ -57,11 +55,10 @@ export default function FilmsPage() {
 
   const handleGenre = (g) => {
     setSelectedGenre(g);
-    setSearchTerm(""); // limpa busca ao trocar de gênero (sua lógica original)
+    setSearchTerm("");
     fetchByGenre(g);
   };
 
-  // Filtro por busca: título OU tags/genres
   const filtered = React.useMemo(() => {
     if (!debounced) return films;
     return films.filter((f) => {

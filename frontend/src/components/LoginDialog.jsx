@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { User } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext"; // <- corrigido (sem 's')
+import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../hooks/use-toast";
 
 export default function LoginDialog() {
@@ -32,10 +32,8 @@ export default function LoginDialog() {
   React.useEffect(() => {
     if (open) {
       gen();
-      // foco no e-mail ao abrir
       setTimeout(() => emailRef.current?.focus(), 0);
     } else {
-      // limpar ao fechar
       setEmail("");
       setCaptcha("");
     }

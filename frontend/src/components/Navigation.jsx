@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import LoginDialog from "./LoginDialog";
 import { Home, Film, Search, Star, MessageSquare, Menu, X } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext"; // <- corrigido
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Navigation() {
   const { user, logout } = useAuth();
@@ -21,7 +21,6 @@ export default function Navigation() {
       : []),
   ];
 
-  // Bloqueia scroll do body quando a sidebar está aberta (mobile)
   React.useEffect(() => {
     if (sidebarOpen) {
       document.body.classList.add("overflow-hidden");
@@ -31,7 +30,6 @@ export default function Navigation() {
     return () => document.body.classList.remove("overflow-hidden");
   }, [sidebarOpen]);
 
-  // Fecha com Esc
   React.useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") setSidebarOpen(false);

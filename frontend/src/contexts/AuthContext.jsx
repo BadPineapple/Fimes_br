@@ -14,12 +14,10 @@ export function AuthProvider({ children }) {
   const login = async (email) => {
     setLoading(true);
     try {
-      // Preferir body JSON (privacidade). Se a API não aceitar, caímos no fallback com querystring.
       let res;
       try {
         res = await api.post("/auth/login", { email });
       } catch (e) {
-        // fallback para o comportamento original
         res = await api.post(`/auth/login?email=${encodeURIComponent(email)}`);
       }
 
@@ -32,7 +30,6 @@ export function AuthProvider({ children }) {
       localStorage.setItem("userId", String(data.id));
       return data;
     } catch (err) {
-      // limpa qualquer resquício
       setUser(null);
       localStorage.removeItem("userId");
       throw err;
@@ -46,7 +43,6 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("userId");
   };
 
-  // Reidratação inicial com guarda de montagem
   React.useEffect(() => {
     let mounted = true;
     const userId = localStorage.getItem("userId");
@@ -75,16 +71,13 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // Sincronização multi-aba (logout/login em outra aba)
   React.useEffect(() => {
     const onStorage = (e) => {
       if (e.key === "userId") {
         const next = e.newValue;
         if (!next) {
-          // logout em outra aba
           setUser(null);
         } else {
-          // login em outra aba -> reidrata
           api
             .get(`/auth/me?user_id=${encodeURIComponent(next)}`)
             .then((r) => setUser(r.data))

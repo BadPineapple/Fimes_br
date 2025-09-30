@@ -1,7 +1,6 @@
-// frontend/src/pages/ModeratorDashboard.jsx
 import React from "react";
 import api from "../services/api";
-import { useAuth } from "../contexts/AuthContext"; // <- corrigido
+import { useAuth } from "../contexts/AuthContext"; 
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
@@ -62,7 +61,6 @@ export default function ModeratorDashboard() {
   }, [user?.role, load]);
 
   const ask = (type, data = {}) => {
-    // Para adicionar filme, apenas muda para a aba correta (não precisa de senha)
     if (type === "add_film") {
       setActiveTab("add-film");
       return;
@@ -73,7 +71,6 @@ export default function ModeratorDashboard() {
   };
 
   const confirm = async () => {
-    // ⚠️ Senha no cliente é fraca; manter só enquanto o backend não tem roles/JWT.
     if (password !== "1357") {
       toast({ title: "Senha incorreta. Use: 1357", duration: 2500 });
       return;
@@ -95,7 +92,6 @@ export default function ModeratorDashboard() {
         await load();
         toast({ title: "Usuário marcado como apoiador!", duration: 2000 });
       } else {
-        // tipo desconhecido
         toast({ title: "Ação desconhecida.", duration: 2500 });
       }
     } catch (e) {

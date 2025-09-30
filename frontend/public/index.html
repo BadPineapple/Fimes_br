@@ -77,12 +77,11 @@
 
                 if (isProd && consentGranted) {
                     posthog.init("phc_yJW1VjHGGwmCbbrtczfqqNxgBDbhlhOWcdzcIJEOTFE", {
-                    api_host: "https://us.i.posthog.com",
-                    person_profiles: "identified_only",
-                    // recomendações de privacidade seguras por padrão:
-                    disable_session_recording: true,
-                    capture_pageview: true,
-                    // Algumas instalações usam ip:false no SDK importável; aqui mantemos configs conservadoras
+                        api_host: "https://us.i.posthog.com",
+                        person_profiles: "identified_only",
+
+                        disable_session_recording: true,
+                        capture_pageview: true,
                     });
                 }
                 } catch (e) {
