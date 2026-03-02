@@ -1,58 +1,82 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
-import { Header } from '../components/Header';
-import { MovieCard } from '../components/MovieCard';
-import { Search, ChevronDown } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Film as FilmIcon, Star } from "lucide-react";
 
-export function MoviesPage() {
-  const [filmes, setFilmes] = useState([]);
-  const [busca, setBusca] = useState('');
+export default function FilmCard({ film }) {
+  if (!film) return null;
 
-  useEffect(() => {
-    async function loadFilmes() {
-      // Usando a rota GET que refatoramos para MySQL
-      const response = await api.get('/filmes', { params: { q: busca } });
-      setFilmes(response.data);
-    }
-    loadFilmes();
-  }, [busca]);
+  // 1. Adaptação dos nomes (Mapeando Inglês -> Português do seu Banco)
+  // O seu backend usa imagem_capa ou a URL que definimos na rota de upload
+  const cover = film.imagem_capa || film.poster_url || null; 
+  const title = film.titulo || "Sem título";
+  const year = film.ano || null;
+
+  // 2. Adaptação da Nota
+  const ratingRaw = film.nota || film.rating || null;
+  const ratingText = ratingRaw != null ? Number(ratingRaw).toFixed(1) : null;
+
+  // 3. Adaptação das Tags (Transformando string "Ação, Drama" em Array)
+  const tags = typeof film.genero === 'string' 
+    ? film.genero.split(',').map(g => g.trim()) 
+    : Array.isArray(film.generos) ? film.generos : [];
+    
+  const topTags = tags.slice(0, 2);
+
+  // 4. Ajuste da Rota (O seu backend usa /filmes)
+  const to = `/filmes/${film.id}`;
+  const aria = `Ver detalhes do filme: ${title}`;
 
   return (
-    <div className="min-h-screen bg-[#f8faf9]">
-      <Header />
-
-      <main className="max-w-7xl mx-auto px-8 py-12">
-        <h2 className="text-4xl font-bold text-green-900 mb-8">Filmografia Brasileira</h2>
-
-        {/* Barra de Filtros */}
-        <div className="flex justify-between items-center mb-10">
-          <div className="relative w-1/3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Buscar filmes..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-green-500 outline-none transition"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+    <Link to={to} aria-label={aria} className="block group">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100 h-full flex flex-col">
+        
+        {/* Container da Imagem */}
+        <div className="aspect-[2/3] bg-gradient-to-br from-green-100 to-yellow-100 relative overflow-hidden">
+          {cover ? (
+            <img
+              src={cover}
+              alt={`Capa de ${title}`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
             />
-          </div>
-
-          <div className="flex items-center gap-4 text-gray-600 font-medium">
-            <span>Filtrar por gênero:</span>
-            <div className="relative bg-white border border-gray-200 px-4 py-2 rounded-xl flex items-center gap-8 cursor-pointer hover:bg-gray-50 transition">
-              <span>Drama (6)</span>
-              <ChevronDown size={18} />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <FilmIcon size={48} className="text-green-600/30" />
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Grid de Filmes */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-          {filmes.map(filme => (
-            <MovieCard key={filme.id} filme={filme} />
-          ))}
+        {/* Conteúdo do Card */}
+        <div className="p-4 flex flex-col flex-grow">
+          <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-2 h-10">
+            {title}
+          </h3>
+
+          <div className="flex items-center gap-3 text-xs text-gray-500 mt-auto">
+            {year && <span>{year}</span>}
+            {ratingText && (
+              <div className="flex items-center gap-1 font-semibold text-yellow-700">
+                <Star size={12} fill="currentColor" className="text-yellow-500" />
+                <span>{ratingText}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Tags / Gêneros */}
+          {topTags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-3">
+              {topTags.map((tag, i) => (
+                <span 
+                  key={`${tag}-${i}`} 
+                  className="text-[10px] uppercase tracking-wider font-extrabold text-gray-400 border border-gray-200 px-2 py-0.5 rounded-md"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-      </main>
-    </div>
+      </div>
+    </Link>
   );
 }
