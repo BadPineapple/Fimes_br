@@ -18,7 +18,7 @@ const formatarTag = (dados) => {
 // GET: Listar todas as tags
 router.get('/', async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM tags');
+        const [rows] = await db.execute('SELECT * FROM TBLTAG');
         res.json(rows);
     } catch (error) {
         res.status(500).json({ erro: "Erro ao buscar tags no banco de dados." });
@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const [rows] = await db.query('SELECT * FROM tags WHERE id = ?', [id]);
+        const [rows] = await db.execute('SELECT * FROM TBLTAG WHERE id = ?', [id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ mensagem: "Tag não encontrada" });
@@ -47,7 +47,7 @@ router.post('/', verificarAcesso(['admin']), async (req, res) => {
         const novaTag = formatarTag(req.body);
 
         // O MySQL gerencia o ID automaticamente
-        const [result] = await db.query('INSERT INTO tags SET ?', [novaTag]);
+        const [result] = await db.execute('INSERT INTO TBLTAG SET ?', [novaTag]);
 
         res.status(201).json({ id: result.insertId, ...novaTag }); 
     } catch (error) {
@@ -61,7 +61,7 @@ router.put('/:id', verificarAcesso(['admin']), async (req, res) => {
         const id = parseInt(req.params.id);
         const dadosAtualizados = formatarTag(req.body);
 
-        const [result] = await db.query('UPDATE tags SET ? WHERE id = ?', [dadosAtualizados, id]);
+        const [result] = await db.execute('UPDATE TBLTAG SET ? WHERE id = ?', [dadosAtualizados, id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ erro: "Tag não encontrada para atualização." });
@@ -78,7 +78,7 @@ router.delete('/:id', verificarAcesso(['admin']), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
 
-        const [result] = await db.query('DELETE FROM tags WHERE id = ?', [id]);
+        const [result] = await db.execute('DELETE FROM TBLTAG WHERE id = ?', [id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ erro: "Tag não encontrada para exclusão." });

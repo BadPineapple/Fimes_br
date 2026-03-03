@@ -20,7 +20,7 @@ const formatarPlataforma = (dados) => {
 // GET: Listar todas as plataformas
 router.get('/', async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM plataformas');
+        const [rows] = await db.execute('SELECT * FROM TBLPLA');
         res.json(rows);
     } catch (error) {
         res.status(500).json({ erro: "Erro ao buscar plataformas no banco de dados." });
@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const [rows] = await db.query('SELECT * FROM plataformas WHERE id = ?', [id]);
+        const [rows] = await db.execute('SELECT * FROM TBLPLA WHERE id = ?', [id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ mensagem: "Plataforma não encontrada" });
@@ -49,7 +49,7 @@ router.post('/', verificarAcesso(['admin']), async (req, res) => {
         const novaPlataforma = formatarPlataforma(req.body);
 
         // O MySQL gera o ID automaticamente
-        const [result] = await db.query('INSERT INTO plataformas SET ?', [novaPlataforma]);
+        const [result] = await db.execute('INSERT INTO TBLPLA SET ?', [novaPlataforma]);
 
         res.status(201).json({ id: result.insertId, ...novaPlataforma }); 
     } catch (error) {
@@ -63,7 +63,7 @@ router.put('/:id', verificarAcesso(['admin']), async (req, res) => {
         const id = parseInt(req.params.id);
         const dadosAtualizados = formatarPlataforma(req.body);
 
-        const [result] = await db.query('UPDATE plataformas SET ? WHERE id = ?', [dadosAtualizados, id]);
+        const [result] = await db.execute('UPDATE TBLPLA SET ? WHERE id = ?', [dadosAtualizados, id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ erro: "Plataforma não encontrada para atualização." });
@@ -81,7 +81,7 @@ router.delete('/:id', verificarAcesso(['admin']), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
 
-        const [result] = await db.query('DELETE FROM plataformas WHERE id = ?', [id]);
+        const [result] = await db.execute('DELETE FROM TBLPLA WHERE id = ?', [id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ erro: "Plataforma não encontrada para exclusão." });

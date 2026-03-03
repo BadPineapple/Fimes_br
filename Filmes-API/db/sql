@@ -1,32 +1,33 @@
 -- 1. Tabelas sem Chaves Estrangeiras (Base)
-CREATE TABLE Roles (
+CREATE TABLE TBLROL (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    nome_role VARCHAR(50) NOT NULL -- Ajustado de 'genero' para 'nome_role'
+    nome_role VARCHAR(50) NOT NULL
 );
 
-CREATE TABLE generos (
+CREATE TABLE TBLGEN (
     id INT PRIMARY KEY AUTO_INCREMENT,
     genero VARCHAR(50) NOT NULL
 );
 
-CREATE TABLE pessoas (
+CREATE TABLE TBLPES (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pessoa VARCHAR(100) NOT NULL
 );
 
-CREATE TABLE tags (
+CREATE TABLE TBLTAG (
     id INT PRIMARY KEY AUTO_INCREMENT,
     tag VARCHAR(50) NOT NULL
 );
 
-CREATE TABLE Plataformas (
+CREATE TABLE TLBPLA (
     id INT PRIMARY KEY AUTO_INCREMENT,
     plataforma VARCHAR(100) NOT NULL,
     link VARCHAR(255)
 );
 
 -- 2. Tabela de Login (Usuários)
-CREATE TABLE usuarios (
+
+CREATE TABLE TBLLOGIN (
     id INT PRIMARY KEY AUTO_INCREMENT,
     usuario VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -36,10 +37,21 @@ CREATE TABLE usuarios (
     ultimo_acesso DATETIME
 );
 
+CREATE TABLE TBLUSER (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    login_id INT UNIQUE NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    descricao TEXT,
+    data_nascimento DATE,
+    apoiador BOOLEAN DEFAULT FALSE,
+    propaganda BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (login_id) REFERENCES login(id) ON DELETE CASCADE
+);
+
 -- 3. Tabela de Filmes
 -- Nota: Para campos como 'elenco', o ideal seria uma tabela N:N, 
 -- mas seguindo seu diagrama, eles estão como FKs diretas.
-CREATE TABLE Filmes (
+CREATE TABLE TBLFIL (
     id INT PRIMARY KEY AUTO_INCREMENT,
     titulo VARCHAR(150) NOT NULL,
     diretor INT,
@@ -52,24 +64,26 @@ CREATE TABLE Filmes (
     imagens VARCHAR(255),
     duracao VARCHAR(20),
     ano INT,
-    FOREIGN KEY (diretor) REFERENCES pessoas(id),
-    FOREIGN KEY (elenco) REFERENCES pessoas(id),
-    FOREIGN KEY (roterista) REFERENCES pessoas(id),
-    FOREIGN KEY (plataforma) REFERENCES Plataformas(id),
-    FOREIGN KEY (genero) REFERENCES generos(id),
-    FOREIGN KEY (tags) REFERENCES tags(id)
+    FOREIGN KEY (diretor) REFERENCES pessoas(id) ON DELETE RESTRICT,
+    FOREIGN KEY (elenco) REFERENCES pessoas(id) ON DELETE RESTRICT,
+    FOREIGN KEY (roterista) REFERENCES pessoas(id) ON DELETE RESTRICT,
+    FOREIGN KEY (plataforma) REFERENCES Plataformas(id) ON DELETE RESTRICT,
+    FOREIGN KEY (genero) REFERENCES generos(id) ON DELETE RESTRICT,
+    FOREIGN KEY (tags) REFERENCES tags(id) ON DELETE RESTRICT
 );
 
 -- 4. Tabelas de Relacionamento e Dependência
-CREATE TABLE usuarios_roles (
+
+
+CREATE TABLE TBLLOGROL (
     id INT PRIMARY KEY AUTO_INCREMENT,
     role INT,
     usuario INT,
-    FOREIGN KEY (role) REFERENCES Roles(id),
-    FOREIGN KEY (usuario) REFERENCES Login(id)
+    FOREIGN KEY (role) REFERENCES Roles(id) ON DELETE RESTRICT ,
+    FOREIGN KEY (login) REFERENCES Login(id) ON DELETE CASCADE 
 );
 
-CREATE TABLE Reviews (
+CREATE TABLE TBLREV (
     id INT PRIMARY KEY AUTO_INCREMENT,
     usuario INT,
     nota INT CHECK (nota >= 0 AND nota <= 10),
@@ -77,6 +91,6 @@ CREATE TABLE Reviews (
     data DATE,
     filme INT,
     status VARCHAR(20),
-    FOREIGN KEY (usuario) REFERENCES Login(id),
-    FOREIGN KEY (filme) REFERENCES Filmes(id)
+    FOREIGN KEY (usuario) REFERENCES Login(id) ON DELETE CASCADE,
+    FOREIGN KEY (filme) REFERENCES Filmes(id) ON DELETE CASCADE
 );

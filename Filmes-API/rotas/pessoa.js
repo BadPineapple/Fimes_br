@@ -18,7 +18,7 @@ const formatarPessoa = (dados) => {
 // GET: Listar todas as pessoas (atores, diretores, etc)
 router.get('/', async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM pessoas');
+        const [rows] = await db.execute('SELECT * FROM TBLPES');
         res.json(rows);
     } catch (error) {
         res.status(500).json({ erro: "Erro ao buscar pessoas no banco de dados." });
@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const [rows] = await db.query('SELECT * FROM pessoas WHERE id = ?', [id]);
+        const [rows] = await db.execute('SELECT * FROM TBLPES WHERE id = ?', [id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ mensagem: "Pessoa não encontrada" });
@@ -47,7 +47,7 @@ router.post('/', verificarAcesso(['admin']), async (req, res) => {
         const novaPessoa = formatarPessoa(req.body);
 
         // MySQL cuida do ID automático
-        const [result] = await db.query('INSERT INTO pessoas SET ?', [novaPessoa]);
+        const [result] = await db.execute('INSERT INTO TBLPES SET ?', [novaPessoa]);
 
         res.status(201).json({ id: result.insertId, ...novaPessoa }); 
     } catch (error) {
@@ -61,7 +61,7 @@ router.put('/:id', async (req, res) => {
         const id = parseInt(req.params.id);
         const dadosAtualizados = formatarPessoa(req.body);
 
-        const [result] = await db.query('UPDATE pessoas SET ? WHERE id = ?', [dadosAtualizados, id]);
+        const [result] = await db.execute('UPDATE TBLPES SET ? WHERE id = ?', [dadosAtualizados, id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ erro: "Pessoa não encontrada para atualização." });
@@ -78,7 +78,7 @@ router.delete('/:id', verificarAcesso(['admin']), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
 
-        const [result] = await db.query('DELETE FROM pessoas WHERE id = ?', [id]);
+        const [result] = await db.execute('DELETE FROM TBLPES WHERE id = ?', [id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ erro: "Pessoa não encontrada para exclusão." });

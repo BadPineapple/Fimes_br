@@ -22,7 +22,7 @@ const formatarFilme = (dados) => {
 // Rota para buscar TODOS os filmes
 router.get('/', async (req, res) => {
     try {
-        const [filmes] = await db.query('SELECT * FROM filmes');
+        const [filmes] = await db.execute('SELECT * FROM TBLFIL');
         res.json(filmes);
     } catch (error) {
         res.status(500).json({ erro: "Erro ao buscar filmes no banco de dados." });
@@ -35,7 +35,7 @@ router.post('/', verificarAcesso(['admin']), async (req, res) => {
         const novoFilme = formatarFilme(req.body);
 
         // O MySQL cuida do ID automaticamente, então apenas inserimos os dados
-        const [result] = await db.query('INSERT INTO filmes SET ?', [novoFilme]);
+        const [result] = await db.execute('INSERT INTO TBLFIL SET ?', [novoFilme]);
 
         res.status(201).json({ id: result.insertId, ...novoFilme }); 
     } catch (error) {
@@ -47,7 +47,7 @@ router.post('/', verificarAcesso(['admin']), async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const [filmes] = await db.query('SELECT * FROM filmes WHERE id = ?', [id]);
+        const [filmes] = await db.execute('SELECT * FROM TBLFIL WHERE id = ?', [id]);
 
         if (filmes.length === 0) {
             return res.status(404).json({ mensagem: "Filme não encontrado" });
@@ -65,7 +65,7 @@ router.put('/:id', verificarAcesso(['admin']), async (req, res) => {
         const id = parseInt(req.params.id);
         const dadosAtualizados = formatarFilme(req.body);
 
-        const [result] = await db.query('UPDATE filmes SET ? WHERE id = ?', [dadosAtualizados, id]);
+        const [result] = await db.execute('UPDATE TBLFIL SET ? WHERE id = ?', [dadosAtualizados, id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ erro: "Filme não encontrado para atualização." });
@@ -82,7 +82,7 @@ router.delete('/:id', verificarAcesso(['admin']), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
 
-        const [result] = await db.query('DELETE FROM filmes WHERE id = ?', [id]);
+        const [result] = await db.execute('DELETE FROM TBLFIL WHERE id = ?', [id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ erro: "Filme não encontrado para exclusão." });

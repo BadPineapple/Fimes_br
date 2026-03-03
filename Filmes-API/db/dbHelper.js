@@ -46,8 +46,8 @@ async function buscarComRecursos(tabela, queryParams, camposBusca = []) {
 
     try {
         // Executa a busca dos dados e a contagem total simultaneamente
-        const [dados] = await db.query(sql, valuesComPaginacao);
-        const [totalRes] = await db.query(sqlCount, values);
+        const [dados] = await db.execute(sql, valuesComPaginacao);
+        const [totalRes] = await db.execute(sqlCount, values);
         
         const totalRegistros = totalRes[0].total;
         const totalPaginas = Math.ceil(totalRegistros / limite);

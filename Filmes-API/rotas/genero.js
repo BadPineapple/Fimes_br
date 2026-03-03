@@ -18,7 +18,7 @@ const formatarGenero = (dados) => {
 // GET: Listar todos os gêneros
 router.get('/', async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM generos');
+        const [rows] = await db.execute('SELECT * FROM TBLGEN');
         res.json(rows);
     } catch (error) {
         res.status(500).json({ erro: "Erro ao buscar gêneros no banco." });
@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const [rows] = await db.query('SELECT * FROM generos WHERE id = ?', [id]);
+        const [rows] = await db.execute('SELECT * FROM TBLGEN WHERE id = ?', [id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ mensagem: "Gênero não encontrado" });
@@ -47,7 +47,7 @@ router.post('/', verificarAcesso(['admin']), async (req, res) => {
         const novoGenero = formatarGenero(req.body);
 
         // O MySQL cuida do ID automático (Auto Increment)
-        const [result] = await db.query('INSERT INTO generos SET ?', [novoGenero]);
+        const [result] = await db.execute('INSERT INTO TBLGEN SET ?', [novoGenero]);
 
         res.status(201).json({ id: result.insertId, ...novoGenero }); 
     } catch (error) {
@@ -61,7 +61,7 @@ router.put('/:id', verificarAcesso(['admin']), async (req, res) => {
         const id = parseInt(req.params.id);
         const dadosAtualizados = formatarGenero(req.body);
 
-        const [result] = await db.query('UPDATE generos SET ? WHERE id = ?', [dadosAtualizados, id]);
+        const [result] = await db.execute('UPDATE TBLGEN SET ? WHERE id = ?', [dadosAtualizados, id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ erro: "Gênero não encontrado para atualização." });
@@ -79,7 +79,7 @@ router.delete('/:id', verificarAcesso(['admin']), async (req, res) => {
     try {
         const id = parseInt(req.params.id);
 
-        const [result] = await db.query('DELETE FROM generos WHERE id = ?', [id]);
+        const [result] = await db.execute('DELETE FROM TBLGEN WHERE id = ?', [id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ erro: "Gênero não encontrado para exclusão." });
