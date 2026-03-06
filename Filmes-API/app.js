@@ -6,13 +6,13 @@ const cors = require('cors');
 const app = express();
 
 // 2. Importação das Rotas
-const authRoutes       = require('./routes/loginRoutes'); // Login e Registro
-const filmeRoutes      = require('./routes/filme');
-const generoRoutes     = require('./routes/genero');
-const plataformaRoutes = require('./routes/plataforma');
-const tagRoutes        = require('./routes/tag');
-const pessoaRoutes     = require('./routes/pessoa');
-const imagensRoutes    = require('./routes/imagens');
+// 2. Importação das Rotas
+const authRoutes    = require('./routes/loginRoutes'); // Login e Registo
+const filmesRoutes  = require('./routes/filmesRoutes'); // Atualizado para o novo ficheiro
+const opcoesRoutes  = require('./routes/opcoesRoutes'); // Consolida géneros, tags, pessoas e plataformas
+const listRoutes    = require('./routes/listRoutes'); // Rotas das listas de utilizadores
+const imagensRoutes = require('./routes/imagens');
+
 
 // 3. Middlewares Globais
 app.use(cors({
@@ -36,12 +36,10 @@ app.get('/', (req, res) => {
 app.use('/auth', authRoutes);
 
 // Rotas de Conteúdo (Protegidas ou Públicas dependendo do método)
-app.use('/tags',        tagRoutes);
-app.use('/pessoas',     pessoaRoutes);
-app.use('/filmes',      filmeRoutes);
-app.use('/generos',     generoRoutes);
-app.use('/plataformas', plataformaRoutes);
-app.use('/imagens',     imagensRoutes);
+app.use('/filmes',  filmesRoutes);
+app.use('/opcoes',  opcoesRoutes); // Substitui as 4 rotas antigas
+app.use('/listas',  listRoutes);   // Nova funcionalidade de listas
+app.use('/imagens', imagensRoutes);
 
 
 // 5. Tratamento de Erro 404 (Rota não encontrada)

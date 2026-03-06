@@ -3,6 +3,8 @@ node_modules/
 
 # Arquivo de configuração sensível (Contém senhas do banco e chaves JWT)
 .env
+install.txt
+Lista.txt
 
 # Pasta de uploads (Para não subir as imagens processadas dos usuários)
 uploads/*
