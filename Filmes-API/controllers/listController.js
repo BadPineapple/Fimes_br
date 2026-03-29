@@ -1,40 +1,56 @@
 const db = require('../db/db'); // Ajuste o caminho para a sua conexão MySQL
 
 const listController = {
-    // 1. Criar uma nova lista
     criarLista: async (req, res) => {
         const { nome, descricao } = req.body;
-        const usuarioId = req.usuario.id; // Vem do token validado pelo auth.js
+        const loginId = req.usuario.id; 
 
-        if (!nome) {
+        if (!nome || nome.trim() === '') {
             return res.status(400).json({ erro: "O nome da lista é obrigatório." });
         }
 
         try {
-            // Verifica o limite de 20 listas (Criadas não-padrão + Seguidas)
-            const [rows] = await db.query(`
+            // 1. Descobrir o IDUSER real (tabela tbluser) a partir do IDLOGIN do token
+            const [userRows] = await db.execute('SELECT IDUSER FROM TBLUSER WHERE IDLOGIN = ?', [loginId]);
+            
+            if (userRows.length === 0) {
+                return res.status(404).json({ erro: "Perfil de utilizador não encontrado." });
+            }
+            
+            const idUserReal = userRows[0].IDUSER;
+
+            // 2. Verifica o limite de 20 listas (Criadas não-padrão + Seguidas)
+            const [rows] = await db.execute(`
                 SELECT 
-                    (SELECT COUNT(*) FROM TBLLIST WHERE IDUSER = ? AND PADRAO = FALSE) +
+                    (SELECT COUNT(*) FROM TBLLIST WHERE IDUSER = ? AND PADRAO = 0) +
                     (SELECT COUNT(*) FROM TBLLIST_FOLLOW WHERE IDUSER = ?) AS total_listas
-            `, [usuarioId, usuarioId]);
+            `, [idUserReal, idUserReal]);
 
             if (rows[0].total_listas >= 20) {
                 return res.status(403).json({ erro: "Atingiu o limite máximo de 20 listas (criadas e seguidas)." });
             }
 
-            // Cria a nova lista
-            const [resultado] = await db.query(
-                `INSERT INTO TBLLIST (IDUSER, nome, descricao, padrao) VALUES (?, ?, ?, FALSE)`,
-                [usuarioId, nome, descricao]
+            // 3. Cria a nova lista (COM OS NOMES CORRETOS DAS COLUNAS)
+            const [resultado] = await db.execute(
+                `INSERT INTO TBLLIST (IDUSER, NOMLIST, \`DESC\`, PADRAO) VALUES (?, ?, ?, 0)`,
+                [idUserReal, nome, descricao || null]
             );
 
             return res.status(201).json({ 
-                mensagem: "Lista criada com sucesso!", 
-                listaId: resultado.insertId 
+                mensagem: "Lista criada com sucesso!",
+                novaLista: {
+                    id: resultado.insertId,
+                    nome: nome,
+                    descricao: descricao || "",
+                    padrao: 0,
+                    total_filmes: 0,
+                    filmes: []
+                }
             });
+
         } catch (error) {
-            console.error(error);
-            return res.status(500).json({ erro: "Erro ao criar a lista." });
+            console.error("Erro ao criar lista:", error);
+            return res.status(500).json({ erro: "Erro interno ao criar a lista." });
         }
     },
 

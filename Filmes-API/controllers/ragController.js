@@ -1,5 +1,4 @@
-const { pipeline } = require('@xenova/transformers');
-const db = require('../db/db'); 
+const db = require('../db/db' );  
 
 // Carrega o modelo de forma global para não repetir o carregamento
 let extractorInstance = null;
@@ -8,6 +7,7 @@ let extractorInstance = null;
 const getExtractor = async () => {
     if (!extractorInstance) {
         console.log("A carregar modelo local (Xenova/all-MiniLM-L6-v2)...");
+        const { pipeline } = await import('@xenova/transformers');
         extractorInstance = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
         console.log("Modelo carregado com sucesso!");
     }

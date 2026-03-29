@@ -3,9 +3,9 @@ const db = require('../db/db'); // Ajustar o caminho para a conexão com o MySQL
 // Função auxiliar para extrair apenas os dados da tabela principal do filme
 const extrairDadosBaseFilme = (dados) => {
     return {
-        titulo: String(dados.titulo || '').trim(),
+        titulo:  String(dados.titulo  || '').trim(),
         sinopse: String(dados.sinopse || '').trim(),
-        imagens: String(dados.imagens || '').trim(),
+        idImagem: dados.idImagem ? Number(dados.idImagem) : null, 
         duracao: String(dados.duracao || '').trim(),
         ano: Number(dados.ano) || null,
         tmdb_id: dados.tmdb_id ? Number(dados.tmdb_id) : null,
@@ -16,15 +16,14 @@ const extrairDadosBaseFilme = (dados) => {
 const filmeController = {
     listarTodos: async (req, res) => {
         try {
-            // Recebe os parâmetros de filtro da URL (ex: ?titulo=Ação&genero=2)
-            const { titulo, genero, tag, plataforma, pessoa } = req.query;
-
-            // Base da query usando DISTINCT para evitar filmes duplicados pelos JOINs
+            // 1. Extrair todos os parâmetros enviados pelo front-end
+            const { titulo, genero, tag, plataforma, pessoa, ano, ordenarPor } = req.query;
+    
             let query = 'SELECT DISTINCT f.* FROM TBLFIL f ';
             const queryParams = [];
             const conditions = [];
-
-            // 1. Adicionar JOINs dinâmicos e condições exatas de ID
+    
+            // 2. Filtros de Relacionamento (JOINs)
             if (genero) {
                 query += 'INNER JOIN TBLFIL_GEN fg ON f.IDFIL = fg.IDFIL ';
                 conditions.push('fg.IDGEN = ?');
@@ -45,27 +44,51 @@ const filmeController = {
                 conditions.push('fpes.IDPES = ?');
                 queryParams.push(pessoa);
             }
-
-            // 2. Condição de busca parcial para o Título (LIKE)
+    
+            // 3. Filtros de Atributos do Filme
             if (titulo) {
                 conditions.push('f.NOMFIL LIKE ?');
                 queryParams.push(`%${titulo}%`);
             }
-
-            // 3. Montar a cláusula WHERE final, se houver filtros
+            if (ano) {
+                conditions.push('f.ANO = ?');
+                queryParams.push(ano);
+            }
+    
             if (conditions.length > 0) {
                 query += ' WHERE ' + conditions.join(' AND ');
             }
-
-            // Ordenação padrão para manter a lista organizada
-            query += ' ORDER BY f.NOMFIL ASC';
-
+    
+            // 4. Lógica de Ordenação Dinâmica
+            let orderClause = ' ORDER BY f.NOMFIL ASC'; // Padrão
+            if (ordenarPor === 'nome_desc') orderClause = ' ORDER BY f.NOMFIL DESC';
+            if (ordenarPor === 'nota_desc') orderClause = ' ORDER BY f.NOTEXT DESC';
+            if (ordenarPor === 'nota_asc') orderClause = ' ORDER BY f.NOTEXT ASC';
+            if (ordenarPor === 'ano_desc') orderClause = ' ORDER BY f.ANO DESC';
+            if (ordenarPor === 'ano_asc') orderClause = ' ORDER BY f.ANO ASC';
+    
+            query += orderClause;
+    
             const [filmes] = await db.execute(query, queryParams);
-            
             res.json(filmes);
         } catch (error) {
-            console.error("Erro na filtragem de filmes:", error);
-            res.status(500).json({ erro: "Erro ao buscar filmes no banco de dados." });
+            console.error("Erro na filtragem:", error);
+            res.status(500).json({ erro: "Erro ao buscar filmes." });
+        }
+    },
+
+    buscarPessoas: async (req, res) => {
+        try {
+            const { busca } = req.query;
+            if (!busca) return res.json([]);
+            
+            const [pessoas] = await db.execute(
+                'SELECT IDPES, NOMPES FROM TBLPES WHERE NOMPES LIKE ? LIMIT 10',
+                [`%${busca}%`]
+            );
+            res.json(pessoas);
+        } catch (error) {
+            res.status(500).json({ erro: "Erro ao buscar pessoas." });
         }
     },
 
@@ -140,7 +163,7 @@ const filmeController = {
                 `INSERT INTO TBLFIL (NOMFIL, SINOPSE, IMAGEM, DURACAO, ANO, IMDBID, NOTEXT) 
                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    baseFilme.titulo, baseFilme.sinopse, baseFilme.imagens, 
+                    baseFilme.titulo, baseFilme.sinopse, baseFilme.idImagem, 
                     baseFilme.duracao, baseFilme.ano, baseFilme.tmdb_id, baseFilme.nota_externa
                 ]
             );
@@ -228,7 +251,7 @@ const filmeController = {
                  SET NOMFIL = ?, SINOPSE = ?, IMAGEM = ?, DURACAO = ?, ANO = ?, IMDBID = ?, NOTEXT = ? 
                  WHERE IDFIL = ?`,
                 [
-                    baseFilme.titulo, baseFilme.sinopse, baseFilme.imagens, 
+                    baseFilme.titulo, baseFilme.sinopse, baseFilme.idImagem, 
                     baseFilme.duracao, baseFilme.ano, baseFilme.tmdb_id, baseFilme.nota_externa, idFilme
                 ]
             );

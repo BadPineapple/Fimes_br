@@ -4,9 +4,6 @@ const fs = require('fs');
 const db = require('../db/db');
 
 const imagemController = {
-    // =========================================================
-    // 1. FAZER UPLOAD E SALVAR NO REPOSITÓRIO
-    // =========================================================
     uploadImagem: async (req, res) => {
         try {
             // Verifica se o middleware Multer conseguiu capturar o ficheiro
@@ -63,9 +60,6 @@ const imagemController = {
         }
     },
 
-    // =========================================================
-    // 2. BUSCAR METADADOS DA IMAGEM POR ID
-    // =========================================================
     buscarPorId: async (req, res) => {
         try {
             const { id } = req.params;

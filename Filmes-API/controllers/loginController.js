@@ -1,4 +1,3 @@
-// Importações base (mantenha as que já tinha no login.js)
 const db = require('../db/db'); 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -13,7 +12,7 @@ const loginController = {
     listarUsuarios: async (req, res) => {
          try {
         const [usuarios] = await db.execute(`
-            SELECT l.id, p.NOMUSER, l.email, l.TEL, p.DTANASC, p.APOIA, p.lead, GROUP_CONCAT(r.NOMROL) as roles
+            SELECT l.IDLOGIN, p.NOMUSER, l.email, l.TEL, p.DTANASC, p.APOIA, p.lead, GROUP_CONCAT(r.NOMROL) as roles
             FROM TBLLOGIN l
             LEFT JOIN TBLUSER p ON l.IDLOGIN = p.IDLOGIN
             LEFT JOIN TBLLOG_ROL lr ON l.IDLOGIN = lr.IDLOGIN
@@ -36,7 +35,7 @@ const loginController = {
             }
 
             const [rows] = await db.execute(`
-                SELECT l.id, p.nome, l.email, l.telefone, l.status, p.data_nascimento, p.descricao, p.apoiador, p.lead, p.foto_perfil, GROUP_CONCAT(r.nome_role) as roles
+                SELECT l.IDLOGIN, p.nome, l.email, l.telefone, l.status, p.data_nascimento, p.descricao, p.apoiador, p.lead, p.foto_perfil, GROUP_CONCAT(r.nome_role) as roles
                 FROM TBLLOGIN l
                 LEFT JOIN TBLUSER p ON l.IDLOGIN = p.IDLOGIN
                 LEFT JOIN TBLLOG_ROL lr ON l.IDLOGIN = lr.IDLOGIN
@@ -56,7 +55,7 @@ const loginController = {
         }
     },
 
-   registrar: async (req, res) => {
+    registrar: async (req, res) => {
         try {
             const { nome, email, senha, telefone, propaganda } = req.body;
 
@@ -72,7 +71,6 @@ const loginController = {
                 });
             }
 
-            // CORRIGIDO: Nomes das colunas do banco (STATS e TEL)
             let queryCheck = 'SELECT IDLOGIN, STATS FROM TBLLOGIN WHERE email = ?';
             let paramsCheck = [email];
             
@@ -83,7 +81,7 @@ const loginController = {
 
             const [contaExistente] = await db.execute(queryCheck, paramsCheck);
 
-            const senhaHash = await bcrypt.hash(senha, SALT_ROUNDS);
+            const senhaHash = await bcrypt.hash(senha, 10); // SALT_ROUNDS (ajuste se a sua variável for externa)
             const tokenVerificacao = Math.floor(100000 + Math.random() * 900000).toString();
             
             let loginId;
@@ -98,7 +96,7 @@ const loginController = {
                     return res.status(403).json({ erro: "Esta conta encontra-se banida do sistema." });
                 }
                 if (conta.STATS === 'D') {
-                    loginId = conta.IDLOGIN; // CORRIGIDO: conta.IDLOGIN em vez de conta.id
+                    loginId = conta.IDLOGIN;
                     await db.execute(
                         'UPDATE TBLLOGIN SET senha = ?, TEL = ?, token_verificacao = ?, EMAILVAL = FALSE, STATS = "A" WHERE IDLOGIN = ?',
                         [senhaHash, telefone || null, tokenVerificacao, loginId]
@@ -112,7 +110,7 @@ const loginController = {
                 loginId = loginResult.insertId;
             }
 
-            // CORRIGIDO: Quantidade de "VALUES" igual à de parâmetros (3 e 3)
+            // Grava ou Atualiza o Perfil do Utilizador
             await db.execute(
                 `INSERT INTO TBLUSER (IDLOGIN, NOMUSER, lead) 
                  VALUES (?, ?, ?) 
@@ -120,8 +118,29 @@ const loginController = {
                 [loginId, nome, propaganda ? 1 : 0]
             );
 
-            // CORRIGIDO: Nomes das colunas da tabela de Roles (IDLOGIN, IDROL)
+            // Regista a Permissão (Role) Padrão
             await db.execute('INSERT IGNORE INTO TBLLOG_ROL (IDLOGIN, IDROL) VALUES (?, ?)', [loginId, 2]);
+
+            // 1. Obter o IDUSER real que acabou de ser criado/atualizado na TBLUSER
+            const [userRows] = await db.execute('SELECT IDUSER FROM TBLUSER WHERE IDLOGIN = ?', [loginId]);
+            
+            if (userRows.length > 0) {
+                const idUserReal = userRows[0].IDUSER;
+
+                // 2. Verifica se o utilizador já tem listas (para não duplicar caso seja uma conta reativada)
+                const [listasExistentes] = await db.execute('SELECT IDLIST FROM tbllist WHERE IDUSER = ?', [idUserReal]);
+
+                if (listasExistentes.length === 0) {
+                    // 3. Insere as 3 listas padrão de uma só vez (Múltiplo Insert para ser mais rápido)
+                    // Marcamos PADRAO = 1 para que o frontend/backend saibam que estas listas são fixas do sistema
+                    await db.execute(`
+                        INSERT INTO tbllist (IDUSER, NOMLIST, DESC, PADRAO) VALUES 
+                        (?, 'Favoritos', 'Os meus filmes favoritos', 1),
+                        (?, 'Like', 'Filmes que eu gostei', 1),
+                        (?, 'Watchlist', 'Filmes para ver mais tarde', 1)
+                    `, [idUserReal, idUserReal, idUserReal]);
+                }
+            }
 
             console.log(`Código de verificação para ${email}: ${tokenVerificacao}`);
             res.status(201).json({ mensagem: "Conta processada com sucesso! Verifique o seu e-mail com o código enviado." });
@@ -136,7 +155,6 @@ const loginController = {
         try {
             const { email, codigo } = req.body;
 
-            // CORRIGIDO: Buscar a coluna STATS e IDLOGIN
             const [rows] = await db.execute('SELECT IDLOGIN, token_verificacao, STATS FROM TBLLOGIN WHERE email = ?', [email]);
 
             if (rows.length === 0) {
@@ -153,7 +171,6 @@ const loginController = {
                 return res.status(400).json({ erro: "Código de verificação inválido." });
             }
 
-            // CORRIGIDO: WHERE IDLOGIN = ?
             await db.execute('UPDATE TBLLOGIN SET EMAILVAL = TRUE, token_verificacao = NULL WHERE IDLOGIN = ?', [user.IDLOGIN]);
 
             res.json({ mensagem: "E-mail verificado com sucesso! Já pode iniciar sessão." });
@@ -206,7 +223,7 @@ const loginController = {
             }
 
             // CORREÇÃO CRÍTICA: Bloquear se a senha for inválida
-            const senhaValida = await bcrypt.compare(senha, user.SENHA);
+            const senhaValida = await bcrypt.compare(senha, user.PASS);
 
             if (!senhaValida) {
                 return res.status(401).json({ erro: "E-mail ou senha incorretos." });
