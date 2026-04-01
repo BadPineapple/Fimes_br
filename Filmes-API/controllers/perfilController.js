@@ -5,7 +5,6 @@ const perfilController = {
         try {
             const loginId = parseInt(req.params.id);
 
-            // 1. Buscar os dados básicos (COM JOIN PARA A FOTO DE PERFIL)
             const [usuario] = await db.execute(`
                 SELECT 
                     p.IDUSER as id_perfil, 
@@ -28,7 +27,6 @@ const perfilController = {
             const dadosPerfil = usuario[0];
             const idUsuarioReal = dadosPerfil.id_perfil;
 
-            // 2. Buscar as listas criadas por este utilizador
             const [listas] = await db.execute(`
                 SELECT 
                     l.IDLIST as id, 
@@ -40,7 +38,6 @@ const perfilController = {
                 WHERE IDUSER = ?
             `, [idUsuarioReal]);
 
-            // 3. Buscar os filmes de cada lista (COM JOIN PARA A CAPA DO FILME)
             for (let lista of listas) {
                 const [filmes] = await db.execute(`
                     SELECT 
@@ -56,15 +53,12 @@ const perfilController = {
                     ORDER BY fl.DTAADC DESC
                 `, [lista.id]);
                 
-                // Anexa os filmes diretamente ao objeto da lista
                 lista.filmes = filmes;
                 lista.total_filmes = filmes.length;
             }
 
-            // Removemos o id_perfil da resposta final pois o frontend não precisa dele
             delete dadosPerfil.id_perfil;
 
-            // 4. Enviar a resposta consolidada para o Frontend
             res.json({
                 perfil: dadosPerfil,
                 listas: listas
@@ -79,14 +73,11 @@ const perfilController = {
     atualizarPerfil: async (req, res) => {
         try {
             const loginId = parseInt(req.params.id);
-            const { nome, descricao, foto_perfil } = req.body; // Agora recebe a foto
-
+            const { nome, descricao, foto_perfil } = req.body; 
             if (!nome || nome.trim() === '') {
                 return res.status(400).json({ erro: "O nome não pode estar vazio." });
             }
 
-            // Se o frontend enviar uma foto nova, atualiza a FOTPER também.
-            // Caso contrário, atualiza só o nome e a descrição.
             if (foto_perfil) {
                 const [result] = await db.execute(`
                     UPDATE tbluser 

@@ -1,11 +1,9 @@
 const express = require('express');
 const router = express.Router();
 
-// Importa o controlador e o middleware de autenticação atualizado
 const loginController = require('../controllers/loginController');
-const { verificarAcesso, somenteAdmin } = require('../auth'); // Ajuste o caminho se necessário
+const { verificarAcesso, somenteAdmin } = require('../auth');
 
-// Mapeamento das rotas para as funções do controlador
 router.get('/', somenteAdmin, loginController.listarUsuarios);
 router.get('/:id', verificarAcesso(), loginController.buscarPorId);
 

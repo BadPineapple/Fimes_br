@@ -1,6 +1,5 @@
-const db = require('../db/db'); // Ajustar o caminho para a conexão com o MySQL
+const db = require('../db/db');
 
-// Função auxiliar para extrair apenas os dados da tabela principal do filme
 const extrairDadosBaseFilme = (dados) => {
     return {
         titulo:  String(dados.titulo  || '').trim(),
@@ -18,8 +17,6 @@ const filmeController = {
         try {
             const { titulo, genero, tag, plataforma, pessoa, ano, ordenarPor } = req.query;
 
-            // 1. Iniciamos a Query com as colunas necessárias
-            // Usamos GROUP_CONCAT para agrupar os nomes dos géneros numa string separada por vírgulas
             let query = `
                 SELECT 
                     f.*, 
@@ -35,10 +32,7 @@ const filmeController = {
             const queryParams = [];
             const conditions = [];
 
-            // 2. Filtros de Relacionamento (Mantendo a sua lógica de JOINs extras se necessário)
             if (genero) {
-                // Se já filtramos por género lá em cima, este JOIN pode ser redundante, 
-                // mas mantemos para garantir que o filtro IDGEN funcione
                 conditions.push('f.IDFIL IN (SELECT IDFIL FROM TBLFIL_GEN WHERE IDGEN = ?)');
                 queryParams.push(genero);
             }
@@ -55,7 +49,6 @@ const filmeController = {
                 queryParams.push(pessoa);
             }
 
-            // 3. Filtros de Atributos
             if (titulo) {
                 conditions.push('f.NOMFIL LIKE ?');
                 queryParams.push(`%${titulo}%`);
@@ -69,10 +62,8 @@ const filmeController = {
                 query += ' WHERE ' + conditions.join(' AND ');
             }
 
-            // 4. Agrupamento necessário por causa do GROUP_CONCAT e JOINs
             query += ' GROUP BY f.IDFIL, i.IDIMG';
 
-            // 5. Ordenação
             let orderClause = ' ORDER BY f.NOMFIL ASC';
             if (ordenarPor === 'nome_desc') orderClause = ' ORDER BY f.NOMFIL DESC';
             if (ordenarPor === 'nota_desc') orderClause = ' ORDER BY f.NOTEXT DESC';
@@ -84,13 +75,9 @@ const filmeController = {
 
             const [rows] = await db.execute(query, queryParams);
 
-            // 6. Formatação para o Frontend (O "Pulo do Gato")
-            // Transformamos os dados planos do SQL no formato de objeto/array que o FilmCard espera
             const filmesFormatados = rows.map(row => ({
                 ...row,
-                // Transforma o caminho da imagem no array IMAGEM
                 IMAGEM: row.CAMINHO_IMAGEM ? [{ IDIMG: row.ID_IMAGEM, LOCAL: row.CAMINHO_IMAGEM }] : [],
-                // Passa a string de géneros (o FilmCard já sabe dar split nela)
                 GENEROS: row.LISTA_GENEROS || ""
             }));
 
@@ -120,7 +107,6 @@ const filmeController = {
     buscarPorId: async (req, res) => {
         const { id } = req.params;
         try {
-            // 1. Buscar os dados básicos do filme
             const [filmeRows] = await db.query(
                 "SELECT * FROM tblfil WHERE IDFIL = ?", 
                 [id]
@@ -132,35 +118,30 @@ const filmeController = {
 
             const filme = filmeRows[0];
 
-            // 2. Buscar Gêneros relacionados
             const [generos] = await db.query(`
                 SELECT g.IDGEN, g.NOMGEN 
                 FROM tblgen g
                 INNER JOIN tblfil_gen fg ON g.IDGEN = fg.IDGEN
                 WHERE fg.IDFIL = ?`, [id]);
 
-            // 3. Buscar Pessoas relacionadas (Diretores/Atores)
             const [pessoas] = await db.query(`
                 SELECT p.IDPES, p.NOMPES 
                 FROM tblpes p
                 INNER JOIN tblfil_pes fp ON p.IDPES = fp.IDPES
                 WHERE fp.IDFIL = ?`, [id]);
 
-            // 4. Buscar Plataformas
             const [plataformas] = await db.query(`
                 SELECT pl.IDPLA, pl.NOMPLA 
                 FROM tblpla pl
                 INNER JOIN tblfil_pla fp ON pl.IDPLA = fp.IDPLA
                 WHERE fp.IDFIL = ?`, [id]);
 
-            // 5. Buscar Imagem do filme
             const [imagens] = await db.query(`
                 SELECT i.IDIMG, i.LOCAL 
                 FROM tblimagem i
                 INNER JOIN tblfil f ON i.IDIMG = f.IMAGEM
                 WHERE f.IDFIL = ?`, [id]);
 
-            // Montar o objeto final
             const resultado = {
                 ...filme,
                 GENEROS: generos,
@@ -202,7 +183,6 @@ const filmeController = {
 
             const idFilme = resultFilme.insertId;
 
-            // Nova função para processar itens mistos (IDs existentes e textos novos)
             const processarRelacaoDinamica = async (conexao, idFilme, tabelaMestre, colunaMestre, tabelaRelacao, colunaRelacaoId, arrayItems, papel = null) => {
                 if (!Array.isArray(arrayItems) || arrayItems.length === 0) return;
 
@@ -210,22 +190,18 @@ const filmeController = {
 
                 for (const item of arrayItems) {
                     if (item.novo) {
-                        // 1. Se é novo, insere na tabela mestre primeiro (ex: TBLPESSOA, TBLGENERO)
                         const [result] = await conexao.execute(
                             `INSERT INTO ${tabelaMestre} (${colunaMestre}) VALUES (?)`,
                             [item.nome]
                         );
-                        // Guarda o ID que o MySQL acabou de gerar
                         idsParaInserir.push(result.insertId);
                     } else if (item.id) {
-                        // 2. Se já existe, apenas guarda o ID
                         idsParaInserir.push(item.id);
                     }
                 }
 
                 if (idsParaInserir.length === 0) return;
 
-                // 3. Insere na tabela de relação (ex: TBLFIL_PES)
                 let query = `INSERT IGNORE INTO ${tabelaRelacao} (IDFIL, ${colunaRelacaoId}`;
                 query += papel ? ', FUNC) VALUES ' : ') VALUES ';
 
@@ -242,7 +218,6 @@ const filmeController = {
                 await conexao.execute(query + placeholders, values);
             };
 
-            // Chamadas dinâmicas. Nota: Ajuste os nomes das tabelas (ex: TBLGENERO) e colunas (ex: 'genero' ou 'nome') se forem diferentes no seu MySQL.
             await processarRelacaoDinamica(conexao, idFilme, 'TBLPES', 'NOMPES', 'TBLFIL_PES', 'IDPES', elenco, 'Elenco');
             await processarRelacaoDinamica(conexao, idFilme, 'TBLPES', 'NOMPES', 'TBLFIL_PES', 'IDPES', diretor, 'Diretor');
             await processarRelacaoDinamica(conexao, idFilme, 'TBLPES', 'NOMPES', 'TBLFIL_PES', 'IDPES', roterista, 'Roterista');
@@ -288,15 +263,12 @@ const filmeController = {
                 ]
             );
 
-            // 2. Limpa as relações antigas para reescrevê-las
             await conexao.execute('DELETE FROM TBLFIL_PES WHERE IDFIL = ?', [idFilme]);
             await conexao.execute('DELETE FROM TBLFIL_GEN WHERE IDFIL = ?', [idFilme]);
             await conexao.execute('DELETE FROM TBLFIL_TAG WHERE IDFIL = ?', [idFilme]);
             await conexao.execute('DELETE FROM TBLFIL_PLA WHERE IDFIL = ?', [idFilme]);
 
-            // 3. Função Refatorada: Agora aceita um Array de Strings (ex: ["Ação", "Aventura"])
             const processarRelacaoDinamica = async (conexao, idFilme, tabelaMestre, colunaMestre, tabelaRelacao, colunaRelacaoId, arrayItems, cargo = null) => {
-                // Se não vier dados ou não for array, sai da função em segurança
                 if (!Array.isArray(arrayItems) || arrayItems.length === 0) return;
 
                 const idsParaInserir = [];
@@ -307,16 +279,13 @@ const filmeController = {
                     const nomeLimpo = itemNome.trim();
                     if (!nomeLimpo) continue;
 
-                    // A. Verifica se o item já existe no banco
                     const [rows] = await conexao.execute(`SELECT ${colunaRelacaoId} FROM ${tabelaMestre} WHERE ${colunaMestre} = ? LIMIT 1`, [nomeLimpo]);
                     
                     let itemId;
 
                     if (rows.length > 0) {
-                        // O item já existe, pega o ID dele
                         itemId = rows[0][colunaRelacaoId];
                     } else {
-                        // B. O item é novo, insere na tabela mestre
                         const [result] = await conexao.execute(`INSERT INTO ${tabelaMestre} (${colunaMestre}) VALUES (?)`, [nomeLimpo]);
                         itemId = result.insertId;
                     }
@@ -326,8 +295,6 @@ const filmeController = {
 
                 if (idsParaInserir.length === 0) return;
 
-                // C. Vincula os IDs na tabela de relação (ex: Filme X Gênero)
-                // Ajustado para usar 'CARGO' em vez de 'papel', conforme o seu banco e front-end
                 let query = `INSERT IGNORE INTO ${tabelaRelacao} (IDFIL, ${colunaRelacaoId}`;
                 query += cargo ? ', FUNC) VALUES ' : ') VALUES ';
 
@@ -344,7 +311,6 @@ const filmeController = {
                 await conexao.execute(query + placeholders, values);
             };
 
-            // 4. Executa o processamento dinâmico
             await processarRelacaoDinamica(conexao, idFilme, 'TBLPES', 'NOMPES', 'TBLFIL_PES', 'IDPES', elenco, 'Ator');
             await processarRelacaoDinamica(conexao, idFilme, 'TBLPES', 'NOMPES', 'TBLFIL_PES', 'IDPES', diretor, 'Diretor');
             await processarRelacaoDinamica(conexao, idFilme, 'TBLPES', 'NOMPES', 'TBLFIL_PES', 'IDPES', roterista, 'Roteirista');

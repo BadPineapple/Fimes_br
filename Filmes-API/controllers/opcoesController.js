@@ -1,4 +1,4 @@
-const db = require('../db/db'); // Ajustar caminho conforme necessário
+const db = require('../db/db'); 
 
 const opcoesController = {
     listarGeneros: async (req, res) => {
@@ -21,7 +21,6 @@ const opcoesController = {
 
     listarPlataformas: async (req, res) => {
         try {
-            // Adicionado o campo 'link' no SELECT
             const [linhas] = await db.execute('SELECT IDPLA, NOMPLA, LINK FROM TBLPLA ORDER BY NOMPLA ASC');
             res.json(linhas);
         } catch (error) {
@@ -31,7 +30,6 @@ const opcoesController = {
 
     listarPessoas: async (req, res) => {
         try {
-            // Serve para listar diretores, atores e roteiristas na mesma caixa de seleção
             const [linhas] = await db.execute('SELECT IDPES, NOMPES FROM TBLPES ORDER BY NOMPES ASC');
             res.json(linhas);
         } catch (error) {
@@ -41,7 +39,7 @@ const opcoesController = {
 
     criarGenero: async (req, res) => {
         try {
-            const { nome } = req.body; // No corpo da requisição enviamos { "nome": "Ação" }
+            const { nome } = req.body; 
             if (!nome) return res.status(400).json({ erro: "O nome do género é obrigatório." });
 
             const [result] = await db.execute('INSERT INTO TBLGEN (genero) VALUES (?)', [nome]);
@@ -65,10 +63,9 @@ const opcoesController = {
 
     criarPlataforma: async (req, res) => {
         try {
-            const { nome, link } = req.body; // Receber também o link
+            const { nome, link } = req.body;
             if (!nome) return res.status(400).json({ erro: "O nome da plataforma é obrigatório." });
 
-            // Inserir o nome e o link (permitindo que o link seja nulo caso não seja enviado)
             const [result] = await db.execute(
                 'INSERT INTO TBLPLA (nome, link) VALUES (?, ?)', 
                 [nome, link || null]
@@ -172,7 +169,7 @@ const opcoesController = {
     atualizarPlataforma: async (req, res) => {
         try {
             const id = parseInt(req.params.id);
-            const { nome, link } = req.body; // Inclui o campo link
+            const { nome, link } = req.body;
             if (!nome) return res.status(400).json({ erro: "O nome da plataforma é obrigatório." });
 
             const [result] = await db.execute(

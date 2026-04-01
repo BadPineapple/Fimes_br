@@ -1,4 +1,4 @@
-const db = require('../db/db'); // Ajuste o caminho para a sua conexão MySQL
+const db = require('../db/db');
 
 const listController = {
     criarLista: async (req, res) => {
@@ -10,7 +10,6 @@ const listController = {
         }
 
         try {
-            // 1. Descobrir o IDUSER real (tabela tbluser) a partir do IDLOGIN do token
             const [userRows] = await db.execute('SELECT IDUSER FROM TBLUSER WHERE IDLOGIN = ?', [loginId]);
             
             if (userRows.length === 0) {
@@ -19,7 +18,6 @@ const listController = {
             
             const idUserReal = userRows[0].IDUSER;
 
-            // 2. Verifica o limite de 20 listas (Criadas não-padrão + Seguidas)
             const [rows] = await db.execute(`
                 SELECT 
                     (SELECT COUNT(*) FROM TBLLIST WHERE IDUSER = ? AND PADRAO = 0) +
@@ -30,7 +28,6 @@ const listController = {
                 return res.status(403).json({ erro: "Atingiu o limite máximo de 20 listas (criadas e seguidas)." });
             }
 
-            // 3. Cria a nova lista (COM OS NOMES CORRETOS DAS COLUNAS)
             const [resultado] = await db.execute(
                 `INSERT INTO TBLLIST (IDUSER, NOMLIST, \`DESC\`, PADRAO) VALUES (?, ?, ?, 0)`,
                 [idUserReal, nome, descricao || null]
@@ -54,13 +51,11 @@ const listController = {
         }
     },
 
-    // 2. Adicionar filme a uma lista
     adicionarFilme: async (req, res) => {
         const { listaId, filmeId } = req.body;
         const usuarioId = req.usuario.id;
 
         try {
-            // Verifica se a lista pertence ao usuário
             const [lista] = await db.query(`SELECT IDUSER FROM TBLLIST WHERE id = ?`, [listaId]);
             
             if (lista.length === 0) {
@@ -70,7 +65,6 @@ const listController = {
                 return res.status(403).json({ erro: "Não tem permissão para editar esta lista." });
             }
 
-            // Adiciona o filme (o INSERT IGNORE evita duplicados na mesma lista)
             await db.query(
                 `INSERT IGNORE INTO TBLLIST_FIL (IDLIST, IDFIL) VALUES (?, ?)`,
                 [listaId, filmeId]
@@ -83,19 +77,16 @@ const listController = {
         }
     },
 
-    // 3. Seguir uma lista de outro utilizador
     seguirLista: async (req, res) => {
         const { listaId } = req.body;
         const usuarioId = req.usuario.id;
 
         try {
-            // Verifica se o usuário está a tentar seguir a própria lista
             const [lista] = await db.query(`SELECT IDUSER FROM TBLLIST WHERE id = ?`, [listaId]);
             if (lista.length > 0 && lista[0].IDUSER === usuarioId) {
                 return res.status(400).json({ erro: "Não pode seguir a sua própria lista." });
             }
 
-            // Verifica o limite de 20 listas
             const [rows] = await db.query(`
                 SELECT 
                     (SELECT COUNT(*) FROM TBLLIST WHERE IDUSER = ? AND padrao = FALSE) +
@@ -106,7 +97,6 @@ const listController = {
                 return res.status(403).json({ erro: "Atingiu o limite máximo de 20 listas (criadas e seguidas)." });
             }
 
-            // Adiciona aos seguidores
             await db.query(
                 `INSERT IGNORE INTO TBLLIST_FOLLOW (IDLIST, IDUSER) VALUES (?, ?)`,
                 [listaId, usuarioId]
@@ -119,13 +109,11 @@ const listController = {
         }
     },
 
-    // 4. Curtir uma lista
     curtirLista: async (req, res) => {
         const { listaId } = req.body;
         const usuarioId = req.usuario.id;
 
         try {
-            // Diferente de seguir, pode curtir a própria lista se quiser
             await db.query(
                 `INSERT IGNORE INTO TBLLIST_LIKE (IDLIST, IDUSER) VALUES (?, ?)`,
                 [listaId, usuarioId]

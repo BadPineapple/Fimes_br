@@ -7,7 +7,6 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'uma_chave_secreta_muito_longa_e_segura';
 
-// Novo formato: Objeto com métodos
 const loginController = {
     listarUsuarios: async (req, res) => {
          try {
@@ -29,7 +28,6 @@ const loginController = {
         try {
             const { id } = req.params;
             
-            // Segurança: Apenas o dono da conta ou admin pode ver os detalhes
             if (!req.usuario.roles.includes('admin') && req.usuario.id !== parseInt(id)) {
                 return res.status(403).json({ erro: "Acesso negado. Apenas pode ver o seu próprio perfil." });
             }
@@ -63,7 +61,6 @@ const loginController = {
                 return res.status(400).json({ erro: "Campos obrigatórios: nome, email e senha." });
             }
 
-            // Validação da Força da Senha
             const regexSenha = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
             if (!regexSenha.test(senha)) {
                 return res.status(400).json({ 
@@ -81,7 +78,7 @@ const loginController = {
 
             const [contaExistente] = await db.execute(queryCheck, paramsCheck);
 
-            const senhaHash = await bcrypt.hash(senha, 10); // SALT_ROUNDS (ajuste se a sua variável for externa)
+            const senhaHash = await bcrypt.hash(senha, 10); 
             const tokenVerificacao = Math.floor(100000 + Math.random() * 900000).toString();
             
             let loginId;
@@ -110,7 +107,6 @@ const loginController = {
                 loginId = loginResult.insertId;
             }
 
-            // Grava ou Atualiza o Perfil do Utilizador
             await db.execute(
                 `INSERT INTO TBLUSER (IDLOGIN, NOMUSER, lead) 
                  VALUES (?, ?, ?) 
@@ -118,21 +114,16 @@ const loginController = {
                 [loginId, nome, propaganda ? 1 : 0]
             );
 
-            // Regista a Permissão (Role) Padrão
             await db.execute('INSERT IGNORE INTO TBLLOG_ROL (IDLOGIN, IDROL) VALUES (?, ?)', [loginId, 2]);
 
-            // 1. Obter o IDUSER real que acabou de ser criado/atualizado na TBLUSER
             const [userRows] = await db.execute('SELECT IDUSER FROM TBLUSER WHERE IDLOGIN = ?', [loginId]);
             
             if (userRows.length > 0) {
                 const idUserReal = userRows[0].IDUSER;
 
-                // 2. Verifica se o utilizador já tem listas (para não duplicar caso seja uma conta reativada)
                 const [listasExistentes] = await db.execute('SELECT IDLIST FROM tbllist WHERE IDUSER = ?', [idUserReal]);
 
                 if (listasExistentes.length === 0) {
-                    // 3. Insere as 3 listas padrão de uma só vez (Múltiplo Insert para ser mais rápido)
-                    // Marcamos PADRAO = 1 para que o frontend/backend saibam que estas listas são fixas do sistema
                     await db.execute(`
                         INSERT INTO tbllist (IDUSER, NOMLIST, DESC, PADRAO) VALUES 
                         (?, 'Favoritos', 'Os meus filmes favoritos', 1),
@@ -192,7 +183,6 @@ const loginController = {
                 LEFT JOIN TBLROL r ON lr.IDROL = r.IDROL
                 WHERE l.email = ? AND l.auth_provider = 'local'`, [email]);
 
-            // Sem conta (redireciona para registrar)
             if (rows.length === 0) {
                 return res.status(404).json({ 
                     erro: "Conta não encontrada. Redirecionando para o registo...", 
@@ -202,7 +192,6 @@ const loginController = {
 
             const user = rows[0];
 
-            // Verificar status Banido ('B') ou Desativado ('D')
             if (user.STATS === 'B') {
                 return res.status(403).json({ erro: "Acesso negado: Esta conta encontra-se banida do sistema." });
             }
@@ -214,7 +203,6 @@ const loginController = {
                 });
             }
 
-            // Verificação de e-mail (caso seja obrigatório)
             if (!user.EMAILVAL) {
                 return res.status(403).json({ 
                     erro: "E-mail não verificado.", 
@@ -222,20 +210,16 @@ const loginController = {
                 });
             }
 
-            // CORREÇÃO CRÍTICA: Bloquear se a senha for inválida
             const senhaValida = await bcrypt.compare(senha, user.PASS);
 
             if (!senhaValida) {
                 return res.status(401).json({ erro: "E-mail ou senha incorretos." });
             }
 
-            // Extrair roles corretamente
             const roles = rows.map(r => r.NOMROL).filter(role => role !== null);
 
-            // Atualiza a data do último acesso
             await db.execute('UPDATE TBLLOGIN SET ULTACES = NOW() WHERE IDLOGIN = ?', [user.IDLOGIN]);
 
-            // Formata as roles como Array para que o auth.js funcione perfeitamente
             const token = jwt.sign(
                 { id: user.IDLOGIN, nome: user.NOMUSER, roles: roles }, 
                 JWT_SECRET, 
@@ -256,22 +240,19 @@ const loginController = {
 
     loginGoogle: async (req, res) => {
         try {
-            const { token } = req.body; // Agora recebemos apenas o token do frontend
+            const { token } = req.body; 
 
-            // 1. O Backend verifica a autenticidade do token com a Google
             const ticket = await googleClient.verifyIdToken({
                 idToken: token,
                 audience: process.env.GOOGLE_CLIENT_ID,
             });
         
-            // 2. Extraímos os dados 100% confiáveis direto da Google
             const payload = ticket.getPayload();
             const email = payload['email'];
             const nome = payload['name'];
             const provider_id = payload['sub'];
             const foto_url = payload['picture'];
 
-            // 3. Verifica se o e-mail já existe na nossa base de dados
             const [rows] = await db.execute(`
                 SELECT l.*, p.nome as nome_perfil, r.nome_role 
                 FROM TBLLOGIN l
@@ -280,12 +261,10 @@ const loginController = {
                 LEFT JOIN TBLROL r ON lr.IDROL = r.IDROL
                 WHERE l.email = ?`, [email]);
 
-            // NOVA LÓGICA: Sem conta (redireciona para registrar)
             if (rows.length === 0) {
                 return res.status(404).json({ 
                     erro: "Conta não encontrada. Redirecionando para o registo...", 
                     acao: "registrar",
-                    // Enviamos os dados do Google para o frontend poder pré-preencher os campos!
                     dadosPreenchimento: { nome, email } 
                 });
             }
@@ -293,7 +272,6 @@ const loginController = {
             const user = rows[0];
             const roles = rows.map(r => r.nome_role).filter(role => role !== null);
 
-            // NOVA LÓGICA: Verificar status Banido ('B') ou Desativado ('D')
             if (user.status === 'B') {
                 return res.status(403).json({ erro: "Acesso negado: Esta conta encontra-se banida do sistema." });
             }
@@ -306,16 +284,13 @@ const loginController = {
                 });
             }
 
-            // Se passar por todas as verificações e for uma conta local antiga, vinculamos ao Google
             if (user.auth_provider === 'local') {
                 await db.execute('UPDATE TBLLOGIN SET auth_provider = ?, provider_id = ?, EMAILVAL = TRUE WHERE IDLOGIN = ?', 
                 ['google', provider_id, user.id]);
             }
 
-            // Atualiza a data do último acesso
             await db.execute('UPDATE TBLLOGIN SET ultaces = NOW() WHERE idlogin = ?', [user.id]);
 
-            // 4. Gera o nosso JWT e devolve ao frontend
             const nossoToken = jwt.sign(
                 { id: user.id, nome: user.nome_perfil || nome, roles: roles }, 
                 JWT_SECRET, 
@@ -340,7 +315,6 @@ const loginController = {
             const { id } = req.params;
             const { email, telefone } = req.body;
 
-            // Verifica se é admin ou o próprio dono da conta
             if (!req.usuario.roles.includes('admin') && req.usuario.id !== parseInt(id)) {
                 return res.status(403).json({ erro: "Não tem permissão para editar este login." });
             }
@@ -404,8 +378,6 @@ const loginController = {
         try {
             const { id } = req.params;
 
-            // NOVA LÓGICA: Soft Delete. Em vez de apagar fisicamente, mudamos o status para 'D' (Desativado)
-            // Assim, mantemos as listas e o histórico salvos, caso ele decida reativar a conta no futuro!
             const [result] = await db.execute('UPDATE TBLLOGIN SET STATS = "D" WHERE IDLOGIN = ?', [id]);
 
             if (result.affectedRows === 0) {
@@ -420,5 +392,4 @@ const loginController = {
     }
 };
 
-// Exporta o controlador no final do ficheiro
 module.exports = loginController;

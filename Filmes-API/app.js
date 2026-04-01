@@ -5,37 +5,31 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 
-// 2. Importação das Rotas
-const authRoutes    = require('./routes/loginRoutes'); // Login e Registo
-const filmesRoutes  = require('./routes/filmesRoutes'); // Atualizado para o novo ficheiro
-const opcoesRoutes  = require('./routes/opcoesRoutes'); // Consolida géneros, tags, pessoas e plataformas
-const listRoutes    = require('./routes/listRoutes'); // Rotas das listas de utilizadores
+const authRoutes    = require('./routes/loginRoutes');
+const filmesRoutes  = require('./routes/filmesRoutes'); 
+const opcoesRoutes  = require('./routes/opcoesRoutes'); 
+const listRoutes    = require('./routes/listRoutes'); 
 const imagensRoutes = require('./routes/imagensRoutes');
 const perfilRoutes  = require('./routes/perfilRoutes');
 const ragRoutes     = require('./routes/ragRoutes');
 const pessoasRoutes = require('./routes/pessoaRoutes');
 
-// 3. Middlewares Globais
 app.use(cors({
-    origin: 'http://localhost:8080', // A porta exata do seu frontend Vite
+    origin: 'http://localhost:8080', 
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'] // Essencial para passar o Token JWT e receber ficheiros
+    allowedHeaders: ['Content-Type', 'Authorization'] 
 })); 
-app.use(express.json()); // Permite que a API receba dados em formato JSON
+app.use(express.json());
 
-// 4. Definição das Rotas (Endpoints)
+
 
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// Rota de Boas-vindas
 app.get('/', (req, res) => {
     res.json({ mensagem: '🎬 Bem-vindo à API de Filmes Pro!', status: 'Online' });
 });
 
-// Rotas de Autenticação (Pública)
 app.use('/auth', authRoutes);
-
-// Rotas de Conteúdo (Protegidas ou Públicas dependendo do método)
 app.use('/filmes',  filmesRoutes);
 app.use('/opcoes',  opcoesRoutes); 
 app.use('/listas',  listRoutes);  
@@ -44,12 +38,10 @@ app.use('/perfil',  perfilRoutes);
 app.use('/rag',     ragRoutes);
 app.use('/artista', pessoasRoutes);
 
-// 5. Tratamento de Erro 404 (Rota não encontrada)
 app.use((req, res) => {
     res.status(404).json({ erro: 'Rota não encontrada.' });
 });
 
-// 6. Iniciando o servidor usando a porta do .env
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
