@@ -5,12 +5,9 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 
-const authRoutes    = require('./routes/loginRoutes');
 const filmesRoutes  = require('./routes/filmesRoutes'); 
 const opcoesRoutes  = require('./routes/opcoesRoutes'); 
-const listRoutes    = require('./routes/listRoutes'); 
 const imagensRoutes = require('./routes/imagensRoutes');
-const perfilRoutes  = require('./routes/perfilRoutes');
 const ragRoutes     = require('./routes/ragRoutes');
 const pessoasRoutes = require('./routes/pessoaRoutes');
 
@@ -29,12 +26,9 @@ app.get('/', (req, res) => {
     res.json({ mensagem: '🎬 Bem-vindo à API de Filmes Pro!', status: 'Online' });
 });
 
-app.use('/auth', authRoutes);
 app.use('/filmes',  filmesRoutes);
 app.use('/opcoes',  opcoesRoutes); 
-app.use('/listas',  listRoutes);  
 app.use('/img',     imagensRoutes);
-app.use('/perfil',  perfilRoutes);
 app.use('/rag',     ragRoutes);
 app.use('/artista', pessoasRoutes);
 

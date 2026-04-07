@@ -31,11 +31,12 @@ const pessoasController = {
                     });
                 }
 
-                if (row.NOMFIL) {
+                if (row.IDFIL) {
                     pessoasMap.get(row.IDPES).filmografia.push({
-                        titulo: row.NOMFIL,
-                        papel: row.PPL,
-                        ano: row.ANO
+                        idfil: row.IDFIL,
+                        nome:  row.NOMFIL,
+                        cargo: row.CARGO,
+                        papel: row.PPL
                     });
                 }
             });
@@ -65,7 +66,7 @@ const pessoasController = {
             
             const [linhas] = await db.execute(query, [id]);
             
-            if (linhas.length === 0) return res.status(404).json({ erro: "Pessoa não encontrada." });
+            if (linhas.length === 0) return res.status(404).json({ erro: "Filme não encontrado." });
 
             const pessoa = {
                 id: linhas[0].IDPES.toString(),
@@ -79,18 +80,19 @@ const pessoasController = {
             };
 
             linhas.forEach(row => {
-                if (row.NOMFIL) {
+                if (row.IDFIL) {
                     pessoa.filmografia.push({
-                        titulo: row.NOMFIL,
-                        papel: row.PPL,
-                        ano: row.ANO
+                        idfil: row.IDFIL,
+                        nome:  row.NOMFIL,
+                        cargo: row.CARGO,
+                        papel: row.PPL
                     });
                 }
             });
 
-            res.json(pessoa);
+            res.json(filme);
         } catch (error) {
-            res.status(500).json({ erro: "Erro ao buscar pessoa.", detalhe: error.message });
+            res.status(500).json({ erro: "Erro ao buscar filme.", detalhe: error.message });
         }
     },
 
