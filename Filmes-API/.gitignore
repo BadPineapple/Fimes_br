@@ -7,7 +7,7 @@ install.txt
 Lista.txt
 
 # Pasta de uploads (Para não subir as imagens processadas dos usuários)
-uploads/*
+public/*
 !.gitkeep
 
 # Logs de erro e depuração

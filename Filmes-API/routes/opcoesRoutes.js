@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const opcoesController = require('../controllers/opcoesController');
-const { somenteAdmin } = require('../auth'); // Ajustar o caminho do auth.js se necessário
+const { somenteAdmin } = require('../auth'); 
 
-// Não requerem autenticação estrita para leitura, pois o formulário precisa carregar as opções
 router.get('/generos', opcoesController.listarGeneros);
 router.get('/tags', opcoesController.listarTags);
 router.get('/plataformas', opcoesController.listarPlataformas);

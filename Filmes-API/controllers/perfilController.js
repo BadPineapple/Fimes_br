@@ -16,7 +16,7 @@ const perfilController = {
                     l.STATS as status
                 FROM tbluser p
                 INNER JOIN tbllogin l ON p.IDLOGIN = l.IDLOGIN
-                LEFT JOIN tblimagem i ON p.FOTPER = i.IDIMG -- LIGAÇÃO COM A TABELA DE IMAGENS
+                LEFT JOIN TBLIMG i ON p.FOTPER = i.IDIMG -- LIGAÇÃO COM A TABELA DE IMAGENS
                 WHERE l.IDLOGIN = ?
             `, [loginId]);
 
@@ -48,7 +48,7 @@ const perfilController = {
                         fl.DTAADC as data_adicao
                     FROM tbllist_fil fl
                     INNER JOIN tblfil f ON fl.IDFIL = f.IDFIL
-                    LEFT JOIN tblimagem img ON f.IMAGEM = img.IDIMG
+                    LEFT JOIN TBLIMG img ON f.IMG = img.IDIMG
                     WHERE fl.IDLIST = ?
                     ORDER BY fl.DTAADC DESC
                 `, [lista.id]);

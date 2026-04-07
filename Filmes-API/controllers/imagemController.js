@@ -37,7 +37,7 @@ const imagemController = {
             
             try {
                 const [result] = await db.execute(
-                    'INSERT INTO TBLIMAGEM (LOCAL, HINT, PUBLIC, TIPO) VALUES (?, ?, ?, ?)',
+                    'INSERT INTO TBLIMG (LOCAL, HINT, PUBLIC, TIPO) VALUES (?, ?, ?, ?)',
                     [caminhoBanco, hint, isPublic, tipo]
                 );
 
@@ -63,7 +63,7 @@ const imagemController = {
             const { id } = req.params;
 
             const [rows] = await db.execute(
-                'SELECT IDIMG, LOCAL, HINT, PUBLIC, TIPO FROM TBLIMAGEM WHERE IDIMG = ?', 
+                'SELECT IDIMG, LOCAL, HINT, PUBLIC, TIPO FROM TBLIMG WHERE IDIMG = ?', 
                 [id]
             );
 

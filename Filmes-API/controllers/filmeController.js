@@ -24,7 +24,7 @@ const filmeController = {
                     i.IDIMG AS ID_IMAGEM,
                     GROUP_CONCAT(DISTINCT g.NOMGEN) AS LISTA_GENEROS
                 FROM TBLFIL f
-                LEFT JOIN TBLIMAGEM i ON f.IMAGEM = i.IDIMG
+                LEFT JOIN TBLIMG i ON f.IMG = i.IDIMG
                 LEFT JOIN TBLFIL_GEN fg ON f.IDFIL = fg.IDFIL
                 LEFT JOIN TBLGEN g ON fg.IDGEN = g.IDGEN
             `;
@@ -138,8 +138,8 @@ const filmeController = {
 
             const [imagens] = await db.query(`
                 SELECT i.IDIMG, i.LOCAL 
-                FROM tblimagem i
-                INNER JOIN tblfil f ON i.IDIMG = f.IMAGEM
+                FROM TBLIMG i
+                INNER JOIN tblfil f ON i.IDIMG = f.IMG
                 WHERE f.IDFIL = ?`, [id]);
 
             const resultado = {
@@ -255,7 +255,7 @@ const filmeController = {
 
             await conexao.execute(
                 `UPDATE TBLFIL 
-                 SET NOMFIL = ?, SINOPSE = ?, IMAGEM = ?, DURACAO = ?, ANO = ?, NOTEXT = ?, NOTEXT = ? 
+                 SET NOMFIL = ?, SINOPSE = ?, IMG = ?, DURACAO = ?, ANO = ?, NOTEXT = ?, NOTEXT = ? 
                  WHERE IDFIL = ?`,
                 [
                     baseFilme.titulo, baseFilme.sinopse, baseFilme.idImagem, 
